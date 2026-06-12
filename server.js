@@ -14,7 +14,7 @@ async function startServer() {
   // CORS — autoriser le frontend Render + localhost
   app.use(cors({
     origin: [
-      'https://fozila-frontend.onrender.com',
+      'https://fozila-frontend-xk23.onrender.com',
       'http://localhost:3000',
       'http://127.0.0.1:3000'
     ],
