@@ -11,21 +11,35 @@ async function startServer() {
   await db.getDb();
   console.log('✅ Base de données connectée.');
 
-  // CORS — autoriser le frontend Render + localhost
+  // CORS
   app.use(cors({
-    origin: [
-      'https://fozila-frontend-xk23.onrender.com',
-      'http://localhost:3000',
-      'http://127.0.0.1:3000'
-    ],
+    origin: '*',
     methods: ['GET','POST','PUT','DELETE'],
     allowedHeaders: ['Content-Type','Authorization']
   }));
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  // Fichiers uploadés
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+  // Frontend statique depuis /public avec bons headers
+  const FRONTEND_PATH = path.join(__dirname, 'public');
+  app.use(express.static(FRONTEND_PATH, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('sw.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+      if (filePath.endsWith('manifest.json')) {
+        res.setHeader('Content-Type', 'application/manifest+json');
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    }
+  }));
+
+  // Routes API
   app.use('/api/auth',          require('./routes/auth'));
   app.use('/api/albums',        require('./routes/albums'));
   app.use('/api/singles',       require('./routes/singles'));
@@ -37,6 +51,11 @@ async function startServer() {
   app.get('/api/health', (req, res) => res.json({ status: 'OK', app: 'Fozila API', version: '1.0.0' }));
   app.use('/api/*', (req, res) => res.status(404).json({ error: 'Route API introuvable.' }));
 
+  // Toutes les autres routes → index.html
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(FRONTEND_PATH, 'index.html'));
+  });
+
   app.use((err, req, res, next) => {
     console.error('Erreur :', err.message);
     res.status(500).json({ error: err.message || 'Erreur serveur.' });
@@ -44,7 +63,7 @@ async function startServer() {
 
   app.listen(PORT, () => {
     console.log(`\n🎵 Fozila API démarrée`);
-    console.log(`   ➜  http://localhost:${PORT}/api/health\n`);
+    console.log(`   ➜  http://localhost:${PORT}\n`);
   });
 }
 
