@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fozila — Connexion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── RESET COMPLET pour cette page ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --v: #7C3AED; --v-light: #A78BFA;
+      --v-dim: rgba(124,58,237,0.15); --v-border: rgba(124,58,237,0.35);
+      --bg: #080808; --card: #0f0f0f; --card2: #141414;
+      --text: #F0F0F0; --muted: #666;
+      --border: rgba(255,255,255,0.06);
+      --green: #22c55e; --red: #ef4444;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* TEXTURE FOND */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url('bg-pattern.jpg');
+      background-size: 420px auto;
+      background-repeat: repeat;
+      opacity: 0.05;
+      pointer-events: none;
+      mix-blend-mode: luminosity;
+    }
+    /* LUEUR */
+    body::before {
+      content: '';
+      position: fixed;
+      width: 600px; height: 600px;
+      top: -200px; left: -150px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.18), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── WRAP ── */
+    .auth-wrap {
+      width: 100%; max-width: 420px;
+      position: relative; z-index: 1;
+    }
+    .auth-logo {
+      text-align: center; margin-bottom: 28px;
+    }
+    .logo {
+      font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800;
+      color: var(--text); text-decoration: none; letter-spacing: -0.5px;
+    }
+    .logo em { color: var(--v-light); font-style: normal; }
+
+    /* ── BOÎTE ── */
+    .auth-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+    }
+
+    /* ── ONGLETS ── */
+    .auth-tabs {
+      display: flex; background: var(--card2);
+      border-radius: 10px; padding: 4px; margin-bottom: 26px;
+    }
+    .auth-tab {
+      flex: 1; text-align: center; padding: 9px;
+      border-radius: 8px; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      transition: all 0.2s; border: none; background: none; font-family: inherit;
+    }
+    .auth-tab.active { background: var(--v); color: #fff; }
+
+    .auth-form { display: none; }
+    .auth-form.active { display: block; }
+
+    /* ── CHAMPS ── */
+    .field-wrap { position: relative; margin-bottom: 16px; }
+    .field-wrap label {
+      display: block; font-size: 12px; color: var(--muted);
+      margin-bottom: 6px; font-weight: 500;
+    }
+    .field-wrap input {
+      width: 100%; padding: 11px 42px 11px 14px;
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      outline: none; transition: border-color 0.2s;
+    }
+    .field-wrap input:focus  { border-color: var(--v); }
+    .field-wrap input.valid  { border-color: var(--green); }
+    .field-wrap input.invalid{ border-color: var(--red); }
+    .field-status {
+      position: absolute; right: 12px; top: 34px; font-size: 14px;
+      pointer-events: none;
+    }
+    .toggle-pwd {
+      position: absolute; right: 12px; top: 34px;
+      cursor: pointer; font-size: 14px; color: var(--muted);
+      user-select: none;
+    }
+    .toggle-pwd:hover { color: var(--text); }
+    .field-msg { font-size: 11px; margin-top: 4px; min-height: 16px; }
+    .field-msg.ok  { color: var(--green); }
+    .field-msg.err { color: var(--red); }
+
+    /* FORCE MOT DE PASSE */
+    .pwd-strength { margin-top: 6px; }
+    .pwd-bars { display: flex; gap: 4px; height: 3px; margin-bottom: 4px; }
+    .pwd-bar { flex: 1; background: var(--border); border-radius: 100px; transition: background 0.3s; }
+    .pwd-bar.weak   { background: #ef4444; }
+    .pwd-bar.medium { background: #f59e0b; }
+    .pwd-bar.strong { background: var(--green); }
+    .pwd-label { font-size: 11px; color: var(--muted); }
+
+    /* ── BOUTONS ── */
+    .btn-primary {
+      display: block; width: 100%;
+      background: var(--v); border: none; color: #fff;
+      padding: 12px; border-radius: 10px;
+      cursor: pointer; font-size: 14px; font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      transition: background 0.2s;
+      margin-top: 4px; position: relative; overflow: hidden;
+    }
+    .btn-primary:hover { background: #6D28D9; }
+    .btn-primary:active { transform: scale(0.99); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .spinner {
+      display: none; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 0.7s linear infinite; margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading .btn-text { display: none; }
+    .loading .spinner  { display: block; }
+
+    /* DIVIDER */
+    .divider {
+      text-align: center; color: var(--muted);
+      font-size: 11px; margin: 16px 0; position: relative;
+    }
+    .divider::before, .divider::after {
+      content: ''; position: absolute; top: 50%;
+      width: 42%; height: 1px; background: var(--border);
+    }
+    .divider::before { left: 0; } .divider::after { right: 0; }
+
+    .back-link { text-align: center; margin-top: 18px; }
+    .back-link a { color: var(--muted); font-size: 13px; text-decoration: none; }
+    .back-link a:hover { color: var(--text); }
+
+    /* TOAST */
+    #fz-toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--text); padding: 13px 20px; border-radius: 10px;
+      font-size: 13px; transform: translateY(80px); opacity: 0;
+      transition: all 0.3s; pointer-events: none;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5); max-width: 300px;
+    }
+    #fz-toast.show { transform: translateY(0); opacity: 1; }
+    #fz-toast.success { border-color: var(--green); color: var(--green); }
+    #fz-toast.error   { border-color: var(--red);   color: var(--red); }
+    #fz-toast.info    { border-color: var(--v-light); color: var(--v-light); }
+  </style>
+</head>
+<body>
+
+  <div class="auth-wrap">
+    <div class="auth-logo">
+      <a href="index.html" class="logo">Fozi<em>la</em></a>
+      <p style="color:var(--muted);font-size:13px;margin-top:6px;">Votre musique, en un clic</p>
+    </div>
+
+    <div class="auth-box">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login"    onclick="switchTab('login')">Connexion</button>
+        <button class="auth-tab"        id="tab-register" onclick="switchTab('register')">S'inscrire</button>
+      </div>
+
+      <!-- CONNEXION -->
+      <div class="auth-form active" id="form-login">
+        <div class="field-wrap">
+          <label>Adresse email</label>
+          <input type="email" id="l-email" placeholder="votre@email.com"
+            oninput="valEmail('l-email','l-email-msg','l-email-st')"
+            onkeydown="if(event.key==='Enter') doLogin()"/>
+          <span class="field-status" id="l-email-st"></span>
+          <div class="field-msg" id="l-email-msg"></div>
+        </div>
+
+        <div class="field-wrap">
+          <label>Mot de passe</label>
+          <input type="password" id="l-pwd" placeholder="••••••••"
+            onkeydown="if(event.key==='Enter') doLogin()"/>
+          <span class="toggle-pwd" onclick="togglePwd('l-pwd',this)">👁</span>
+        </div>
+
+        <button class="btn-primary" id="login-btn" onclick="doLogin()">
+          <span class="btn-text">Se connecter</span>
+          <div class="spinner"></div>
+        </button>
+
+        <div class="divider">ou</div>
+        <p style="text-align:center;font-size:13px;color:var(--muted);">
+          Pas encore de compte ?
+          <a href="#" onclick="switchTab('register');return false;" style="color:var(--v-light);">S'inscrire gratuitement</a>
+        </p>
+      </div>
+
+      <!-- INSCRIPTION -->
+      <div class="auth-form" id="form-register">
+        <div class="field-wrap">
+          <label>Nom complet</label>
+          <input type="text" id="r-name" placeholder="Votre nom"
+            oninput="valName('r-name','r-name-msg','r-name-st')"/>
+          <span class="field-status" id="r-name-st"></span>
+          <div class="field-msg" id="r-name-msg"></div>
+        </div>
+
+        <div class="field-wrap">
+          <label>Adresse email</label>
+          <input type="email" id="r-email" placeholder="votre@email.com"
+            oninput="valEmail('r-email','r-email-msg','r-email-st')"/>
+          <span class="field-status" id="r-email-st"></span>
+          <div class="field-msg" id="r-email-msg"></div>
+        </div>
+
+        <div class="field-wrap">
+          <label>Mot de passe</label>
+          <input type="password" id="r-pwd" placeholder="Min. 6 caractères"
+            oninput="valPwd(this.value)"/>
+          <span class="toggle-pwd" onclick="togglePwd('r-pwd',this)">👁</span>
+          <div class="pwd-strength" id="pwd-strength" style="display:none;">
+            <div class="pwd-bars">
+              <div class="pwd-bar" id="pb1"></div><div class="pwd-bar" id="pb2"></div>
+              <div class="pwd-bar" id="pb3"></div><div class="pwd-bar" id="pb4"></div>
+            </div>
+            <div class="pwd-label" id="pwd-label"></div>
+          </div>
+        </div>
+
+        <div class="field-wrap">
+          <label>Confirmer le mot de passe</label>
+          <input type="password" id="r-confirm" placeholder="Répéter le mot de passe"
+            oninput="valConfirm()"
+            onkeydown="if(event.key==='Enter') doRegister()"/>
+          <span class="field-status" id="r-confirm-st"></span>
+          <div class="field-msg" id="r-confirm-msg"></div>
+        </div>
+
+        <button class="btn-primary" id="register-btn" onclick="doRegister()">
+          <span class="btn-text">Créer mon compte</span>
+          <div class="spinner"></div>
+        </button>
+
+        <div class="divider">ou</div>
+        <p style="text-align:center;font-size:13px;color:var(--muted);">
+          Déjà un compte ?
+          <a href="#" onclick="switchTab('login');return false;" style="color:var(--v-light);">Se connecter</a>
+        </p>
+      </div>
+    </div>
+
+    <div class="back-link"><a href="index.html">← Retour à l'accueil</a></div>
+  </div>
+
+  <div id="fz-toast"></div>
+
+  <script src="fozila.js"></script>
+  <script>
+    // ── Paramètres URL ──
+    const _p = new URLSearchParams(location.search);
+
+    // ── Déjà connecté ? ──
+    // Déjà connecté ?
+    const _existingUser = FOZILA.getUser();
+    if (_existingUser && FOZILA.getToken()) {
+      window.location.href = _existingUser.isAdmin ? 'admin.html' : 'dashboard.html';
+    }
+
+    // ── Onglet depuis URL ──
+    if (_p.get('mode') === 'register') switchTab('register');
+
+    function switchTab(tab) {
+      ['login','register'].forEach(t => {
+        document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+        document.getElementById('form-' + t).classList.toggle('active', t === tab);
+      });
+    }
+
+    // ── Toast local ──
+    function toast(msg, type) {
+      const t = document.getElementById('fz-toast');
+      t.textContent = msg;
+      t.className = 'show ' + (type || '');
+      clearTimeout(t._t);
+      t._t = setTimeout(() => t.className = '', 3500);
+    }
+
+    // ── Validations ──
+    function valEmail(id, msgId, stId) {
+      const v  = document.getElementById(id).value.trim();
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      document.getElementById(id).className    = v ? (ok ? 'valid' : 'invalid') : '';
+      document.getElementById(stId).textContent = v ? (ok ? '✅' : '❌') : '';
+      const m = document.getElementById(msgId);
+      m.textContent = v && !ok ? 'Email invalide' : '';
+      m.className   = 'field-msg ' + (ok ? 'ok' : 'err');
+      return ok && !!v;
+    }
+
+    function valName(id, msgId, stId) {
+      const v  = document.getElementById(id).value.trim();
+      const ok = v.length >= 2;
+      document.getElementById(id).className    = v ? (ok ? 'valid' : 'invalid') : '';
+      document.getElementById(stId).textContent = v ? (ok ? '✅' : '❌') : '';
+      const m = document.getElementById(msgId);
+      m.textContent = v && !ok ? 'Minimum 2 caractères' : '';
+      m.className   = 'field-msg ' + (ok ? 'ok' : 'err');
+      return ok;
+    }
+
+    function valPwd(v) {
+      const str = document.getElementById('pwd-strength');
+      const inp = document.getElementById('r-pwd');
+      if (!v) { str.style.display='none'; inp.className=''; return false; }
+      str.style.display = 'block';
+      let score = 0;
+      if (v.length >= 6)  score++;
+      if (v.length >= 10) score++;
+      if (/[A-Z0-9]/.test(v)) score++;
+      if (/[^A-Za-z0-9]/.test(v)) score++;
+      const cls = ['','weak','medium','strong','strong'];
+      const lbl = ['','Faible','Moyen','Fort','Très fort'];
+      ['pb1','pb2','pb3','pb4'].forEach((id,i) => {
+        document.getElementById(id).className = 'pwd-bar ' + (i < score ? cls[score] : '');
+      });
+      document.getElementById('pwd-label').textContent = lbl[score] || '';
+      const ok = v.length >= 6;
+      inp.className = ok ? 'valid' : 'invalid';
+      return ok;
+    }
+
+    function valConfirm() {
+      const pwd = document.getElementById('r-pwd').value;
+      const con = document.getElementById('r-confirm').value;
+      const ok  = con === pwd && con.length > 0;
+      document.getElementById('r-confirm').className    = con ? (ok ? 'valid' : 'invalid') : '';
+      document.getElementById('r-confirm-st').textContent = con ? (ok ? '✅' : '❌') : '';
+      const m = document.getElementById('r-confirm-msg');
+      m.textContent = con && !ok ? 'Les mots de passe ne correspondent pas' : '';
+      m.className   = 'field-msg ' + (ok ? 'ok' : 'err');
+      return ok;
+    }
+
+    function togglePwd(id, icon) {
+      const inp = document.getElementById(id);
+      inp.type  = inp.type === 'password' ? 'text' : 'password';
+      icon.textContent = inp.type === 'text' ? '🙈' : '👁';
+    }
+
+    // ── CONNEXION ──
+    async function doLogin() {
+      const email = document.getElementById('l-email').value.trim();
+      const pwd   = document.getElementById('l-pwd').value;
+
+      if (!email || !pwd) {
+        toast('Remplissez l\'email et le mot de passe', 'error'); return;
+      }
+      if (!valEmail('l-email','l-email-msg','l-email-st')) {
+        toast('Email invalide', 'error'); return;
+      }
+
+      const btn = document.getElementById('login-btn');
+      btn.classList.add('loading'); btn.disabled = true;
+
+      try {
+        const data = await FOZILA.api('POST', '/auth/login', { email, password: pwd });
+        FOZILA.setSession(data.token, data.user);
+        toast('Bienvenue ' + data.user.name + ' ! 🎵', 'success');
+        const redirect = _p.get('redirect');
+        setTimeout(() => window.location.href = data.user.isAdmin ? 'admin.html' : (redirect || 'dashboard.html'), 700);
+      } catch(err) {
+        btn.classList.remove('loading'); btn.disabled = false;
+        toast(err.message || 'Email ou mot de passe incorrect', 'error');
+        document.getElementById('l-email').classList.add('invalid');
+        document.getElementById('l-pwd').classList.add('invalid');
+      }
+    }
+
+    // ── INSCRIPTION ──
+    async function doRegister() {
+      const nameOk = valName('r-name','r-name-msg','r-name-st');
+      const mailOk = valEmail('r-email','r-email-msg','r-email-st');
+      const pwdOk  = valPwd(document.getElementById('r-pwd').value);
+      const conOk  = valConfirm();
+      if (!nameOk || !mailOk || !pwdOk || !conOk) { toast('Corrigez les erreurs', 'error'); return; }
+
+      const name  = document.getElementById('r-name').value.trim();
+      const email = document.getElementById('r-email').value.trim();
+      const pwd   = document.getElementById('r-pwd').value;
+
+      const btn = document.getElementById('register-btn');
+      btn.classList.add('loading'); btn.disabled = true;
+
+      try {
+        const data = await FOZILA.api('POST', '/auth/register', { name, email, password: pwd });
+        FOZILA.setSession(data.token, data.user);
+        toast('Compte créé ! Bienvenue ' + name + ' 🎉', 'success');
+        setTimeout(() => window.location.href = 'dashboard.html', 700);
+      } catch(err) {
+        btn.classList.remove('loading'); btn.disabled = false;
+        toast(err.message || 'Erreur lors de l\'inscription', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

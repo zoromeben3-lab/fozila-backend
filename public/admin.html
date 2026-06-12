@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fozila — Administration</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08080d;--surface:#101018;--surface2:#18181f;--border:rgba(255,255,255,0.07);--v:#7C3AED;--v-light:#A78BFA;--v-dim:rgba(124,58,237,0.12);--v-border:rgba(124,58,237,0.3);--text:#f0ede8;--muted:#6b6880;--green:#2dd4a0;--red:#e84c4c;--gold:#f0a500;--radius:14px;--radius-sm:8px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;}
+body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url('bg-pattern.jpg');background-size:420px auto;background-repeat:repeat;opacity:0.035;pointer-events:none;mix-blend-mode:luminosity;}
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;position:relative;z-index:1;}
+
+/* SIDEBAR */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sb-logo{padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);}
+.logo-wrap{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:36px;height:36px;background:var(--v);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.logo-text{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;}
+.logo-text em{color:var(--v-light);font-style:normal;}
+.logo-sub{font-size:0.68rem;color:var(--muted);margin-top:1px;}
+.sb-profile{padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:7px;}
+.profile-av{width:60px;height:60px;border-radius:50%;border:2px solid var(--v-light);display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:linear-gradient(135deg,var(--v),#4c1d95);position:relative;}
+.online-dot{position:absolute;bottom:2px;right:2px;width:10px;height:10px;background:var(--green);border-radius:50%;border:2px solid var(--surface);}
+.sb-name{font-size:0.86rem;font-weight:700;}
+.sb-role{font-size:0.68rem;color:var(--v-light);}
+.nav-section{padding:0.7rem 1rem 0.2rem;}
+.nav-lbl{font-size:0.62rem;color:var(--muted);letter-spacing:1.5px;font-weight:600;text-transform:uppercase;padding:0 8px;margin-bottom:5px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:var(--radius-sm);cursor:pointer;color:var(--muted);font-size:0.84rem;font-weight:500;transition:all 0.2s;text-decoration:none;margin-bottom:2px;border:none;background:none;width:100%;text-align:left;font-family:inherit;}
+.nav-item:hover{color:var(--text);background:var(--surface2);}
+.nav-item.active{color:var(--v-light);background:var(--v-dim);}
+.nav-badge{margin-left:auto;background:var(--v);color:#fff;font-size:0.65rem;font-weight:700;padding:2px 7px;border-radius:100px;}
+
+/* MAIN */
+.main{overflow-y:auto;min-height:100vh;}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(8,8,13,0.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 2rem;height:58px;display:flex;align-items:center;justify-content:space-between;}
+.topbar h1{font-family:'Syne',sans-serif;font-size:0.98rem;font-weight:700;}
+.topbar h1 em{color:var(--v-light);font-style:normal;}
+.pc{padding:1.8rem;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:1.8rem;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;}
+.stat-icon{width:34px;height:34px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;margin-bottom:9px;font-size:0.95rem;}
+.si-v{background:var(--v-dim);} .si-g{background:rgba(45,212,160,0.1);} .si-gold{background:rgba(240,165,0,0.1);} .si-r{background:rgba(232,76,76,0.1);}
+.stat-val{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:1px;}
+.sv-v{color:var(--v-light);} .sv-g{color:var(--green);} .sv-gold{color:var(--gold);} .sv-r{color:var(--red);}
+.stat-lbl{font-size:0.72rem;color:var(--muted);}
+.stat-trend{font-size:0.68rem;color:var(--green);margin-top:3px;}
+
+/* PANELS & TABS */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem;margin-bottom:1.4rem;}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;}
+.panel-ttl{font-size:0.92rem;font-weight:700;}
+.panel-ttl em{color:var(--v-light);font-style:normal;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;}
+
+.admin-tabs{display:flex;gap:5px;background:var(--surface);border-radius:var(--radius);padding:4px;margin-bottom:24px;width:fit-content;border:1px solid var(--border);flex-wrap:wrap;}
+.admin-tab{padding:7px 16px;border-radius:var(--radius-sm);cursor:pointer;font-size:0.8rem;font-weight:600;color:var(--muted);transition:all 0.2s;border:none;background:none;font-family:inherit;}
+.admin-tab:hover{color:var(--text);}
+.admin-tab.active{background:var(--v);color:#fff;}
+.admin-panel{display:none;}
+.admin-panel.active{display:block;}
+
+/* BOUTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.8rem;transition:all 0.2s;text-decoration:none;}
+.btn:hover{transform:translateY(-1px);}
+.btn-primary{background:var(--v);color:#fff;}  .btn-primary:hover{background:#6D28D9;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}  .btn-outline:hover{border-color:var(--v-light);color:var(--v-light);}
+.btn-danger{background:rgba(232,76,76,0.1);border:1px solid rgba(232,76,76,0.25);color:var(--red);}  .btn-danger:hover{background:rgba(232,76,76,0.2);}
+.btn-green{background:rgba(45,212,160,0.1);border:1px solid rgba(45,212,160,0.25);color:var(--green);}  .btn-green:hover{background:rgba(45,212,160,0.2);}
+.btn-gold{background:rgba(240,165,0,0.1);border:1px solid rgba(240,165,0,0.25);color:var(--gold);}  .btn-gold:hover{background:rgba(240,165,0,0.2);}
+.btn-sm{padding:4px 11px;font-size:0.75rem;}
+.btn-xs{padding:3px 8px;font-size:0.7rem;}
+
+/* TABLE */
+.table{width:100%;border-collapse:separate;border-spacing:0 4px;}
+.table th{font-size:0.68rem;color:var(--muted);font-weight:500;letter-spacing:0.5px;text-align:left;padding:0 11px 3px;}
+.table td{padding:9px 11px;background:var(--surface2);font-size:0.81rem;vertical-align:middle;}
+.table td:first-child{border-radius:var(--radius-sm) 0 0 var(--radius-sm);}
+.table td:last-child{border-radius:0 var(--radius-sm) var(--radius-sm) 0;}
+.table tr:hover td{background:rgba(124,58,237,0.06);}
+.chip{display:flex;align-items:center;gap:9px;}
+.chip-art{width:36px;height:36px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:0.95rem;flex-shrink:0;overflow:hidden;}
+.chip-art img{width:100%;height:100%;object-fit:cover;}
+.chip-title{font-weight:600;font-size:0.83rem;}
+.chip-sub{font-size:0.68rem;color:var(--muted);}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.66rem;font-weight:700;}
+.bl{background:rgba(45,212,160,0.12);color:var(--green);}
+.bd{background:rgba(138,135,153,0.12);color:var(--muted);}
+.bv{background:var(--v-dim);color:var(--v-light);}
+.bg{background:rgba(240,165,0,0.1);color:var(--gold);}
+.br{background:rgba(232,76,76,0.1);color:var(--red);}
+.price-pill{background:var(--v-dim);color:var(--v-light);padding:2px 8px;border-radius:4px;font-size:0.76rem;font-weight:700;}
+.act{display:flex;gap:5px;align-items:center;}
+
+/* FORM */
+.field{margin-bottom:0.9rem;}
+.field label{display:block;font-size:0.76rem;color:var(--muted);margin-bottom:4px;font-weight:500;}
+.field input,.field select,.field textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 11px;color:var(--text);font-family:inherit;font-size:0.84rem;outline:none;transition:border-color 0.2s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--v);}
+.field textarea{resize:vertical;min-height:65px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;}
+.upload-zone:hover{border-color:var(--v);background:var(--v-dim);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.upload-icon{font-size:1.8rem;margin-bottom:6px;}
+.upload-zone p{font-size:0.82rem;color:var(--muted);}
+.upload-zone .hint{font-size:0.7rem;color:var(--muted);margin-top:3px;opacity:0.7;}
+.cover-prev{width:110px;height:110px;border-radius:var(--radius);object-fit:cover;border:2px solid var(--v-border);margin:10px auto 0;display:block;}
+
+/* ANNOUNCE */
+.ann-row{display:flex;align-items:center;gap:11px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;margin-bottom:7px;}
+.ann-row span{flex:1;font-size:0.82rem;}
+.btn-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.95rem;transition:color 0.2s;padding:3px;}
+.btn-del:hover{color:var(--red);}
+
+/* TOGGLE SWITCH */
+.toggle{position:relative;display:inline-flex;align-items:center;gap:8px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{width:38px;height:20px;background:var(--border);border-radius:100px;transition:background 0.3s;position:relative;flex-shrink:0;}
+.toggle-track::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform 0.3s;}
+.toggle input:checked + .toggle-track{background:var(--v);}
+.toggle input:checked + .toggle-track::after{transform:translateX(18px);}
+.toggle-lbl{font-size:0.8rem;color:var(--muted);}
+
+/* FEATURED STAR */
+.feat-star{color:var(--gold);font-size:1rem;}
+
+/* CHART */
+.chart-bars{display:flex;align-items:flex-end;gap:7px;height:100px;margin-bottom:7px;}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.bar{width:100%;background:var(--v-dim);border-radius:4px 4px 0 0;transition:background 0.2s;cursor:pointer;min-height:4px;}
+.bar:hover{background:rgba(124,58,237,0.4);}
+.bar-lbl{font-size:0.6rem;color:var(--muted);}
+
+/* WITHDRAWAL */
+.withdraw-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.withdraw-row:last-child{border-bottom:none;}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:500;backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:1.8rem;width:100%;max-width:480px;position:relative;max-height:90vh;overflow-y:auto;}
+.modal-close{position:absolute;top:14px;right:14px;background:var(--surface2);border:none;color:var(--muted);width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.9rem;}
+.modal-close:hover{color:var(--text);}
+.modal h2{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:1.3rem;}
+.modal h2 em{color:var(--v-light);font-style:normal;}
+
+/* TOAST */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface);border:1px solid var(--v-border);border-radius:var(--radius-sm);padding:11px 16px;font-size:0.82rem;color:var(--v-light);z-index:9999;transform:translateY(70px);opacity:0;transition:all 0.3s;display:flex;align-items:center;gap:7px;box-shadow:0 8px 28px rgba(0,0,0,0.5);max-width:300px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:var(--green);color:var(--green);}
+.toast.error{border-color:var(--red);color:var(--red);}
+.toast.info{border-color:var(--gold);color:var(--gold);}
+
+/* VISITOR EDITOR */
+.visitor-editor{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.visitor-editor input{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;color:var(--text);font-family:inherit;font-size:0.9rem;width:120px;outline:none;}
+.visitor-editor input:focus{border-color:var(--v);}
+
+@media(max-width:900px){.layout{grid-template-columns:1fr;}.sidebar{display:none;}.stats-grid{grid-template-columns:1fr 1fr;}.grid-2{grid-template-columns:1fr;}}
+@media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="logo-wrap">
+      <div class="logo-icon">🎵</div>
+      <div><div class="logo-text">Fozi<em>la</em></div><div class="logo-sub">Administration</div></div>
+    </div>
+  </div>
+  <div class="sb-profile">
+    <div class="profile-av">👑<div class="online-dot"></div></div>
+    <div class="sb-name">Administrateur</div>
+    <div class="sb-role">Accès total</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-lbl">Principal</div>
+    <button class="nav-item active" onclick="showPage('dashboard')">📊 Tableau de bord</button>
+    <button class="nav-item" onclick="showPage('albums')">💿 Albums</button>
+    <button class="nav-item" onclick="showPage('singles')">🎵 Singles</button>
+    <button class="nav-item" onclick="showPage('featured')">⭐ En vedette</button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-lbl">Gestion</div>
+    <button class="nav-item" onclick="showPage('users')">👥 Utilisateurs</button>
+    <button class="nav-item" onclick="showPage('announce')">📢 Annonces</button>
+    <button class="nav-item" onclick="showPage('withdrawals')">💰 Retraits</button>
+    <button class="nav-item" onclick="showPage('stats')">📈 Statistiques</button>
+  </div>
+  <div style="margin-top:auto;">
+    <div class="nav-section">
+      <button class="nav-item" onclick="window.open('index.html')">🌐 Voir la boutique</button>
+      <button class="nav-item" style="color:var(--red);" onclick="FOZILA.logout()">🚪 Déconnexion</button>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <h1 id="page-title">Tableau de <em>bord</em></h1>
+    <div style="display:flex;gap:9px;align-items:center;">
+      <span style="font-size:0.75rem;color:var(--muted);" id="live-time"></span>
+      <a href="index.html" target="_blank" class="btn btn-outline btn-sm">← Boutique</a>
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--v),#4c1d95);display:flex;align-items:center;justify-content:center;">👑</div>
+    </div>
+  </div>
+
+  <!-- PAGE DASHBOARD -->
+  <div id="page-dashboard" class="pc">
+    <div class="stats-grid" id="dash-stats"></div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-ttl">💿 Derniers <em>albums</em></div><button class="btn btn-outline btn-sm" onclick="showPage('albums')">Voir tout</button></div>
+        <div id="dash-recent"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-ttl">📊 Revenus <em>mensuels</em></div></div>
+        <div class="chart-bars" id="revenue-chart"></div>
+        <div style="text-align:center;padding-top:10px;border-top:1px solid var(--border);">
+          <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--v-light);" id="total-revenue">—</div>
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:1px;">Revenus totaux estimés</div>
+        </div>
+      </div>
+    </div>
+    <!-- VISITEURS EDITOR -->
+    <div class="panel">
+      <div class="panel-hdr"><div class="panel-ttl">👁 Compteur de <em>visiteurs</em></div></div>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:8px;">Affiché sur la page d'accueil. Automatique, mais modifiable manuellement.</p>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--v-light);" id="visitor-count-display">—</div>
+        <div class="visitor-editor">
+          <input type="number" id="visitor-input" placeholder="Modifier…"/>
+          <button class="btn btn-primary btn-sm" onclick="setVisitors()">Mettre à jour</button>
+        </div>
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,var(--v-dim),rgba(76,29,149,0.06));border:1px solid var(--v-border);border-radius:var(--radius);padding:1.3rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:0.95rem;font-weight:700;margin-bottom:3px;">🚀 Publier du contenu</div>
+        <div style="font-size:0.82rem;color:var(--muted);">Ajoutez un album ou un single directement.</div>
+      </div>
+      <div style="display:flex;gap:9px;">
+        <button class="btn btn-primary btn-sm" onclick="openModal('m-add-album')">+ Album</button>
+        <button class="btn btn-outline btn-sm" onclick="openModal('m-add-single')">+ Single</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE ALBUMS -->
+  <div id="page-albums" class="pc" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem;flex-wrap:wrap;gap:10px;">
+      <div><div style="font-size:0.68rem;color:var(--v-light);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-bottom:3px;">Catalogue</div>
+      <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;">Gestion des <em style="color:var(--v-light);font-style:normal;">Albums</em></h2></div>
+      <button class="btn btn-primary" onclick="openModal('m-add-album')">+ Ajouter</button>
+    </div>
+    <div class="panel"><table class="table"><thead><tr><th>Album</th><th>Genre</th><th>Titres</th><th>Prix</th><th>Fichier</th><th>Vedette</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="albums-tbody"></tbody></table></div>
+  </div>
+
+  <!-- PAGE SINGLES -->
+  <div id="page-singles" class="pc" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem;flex-wrap:wrap;gap:10px;">
+      <div><div style="font-size:0.68rem;color:var(--v-light);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-bottom:3px;">Catalogue</div>
+      <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;">Singles & <em style="color:var(--v-light);font-style:normal;">Titres</em></h2></div>
+      <button class="btn btn-primary" onclick="openModal('m-add-single')">+ Ajouter</button>
+    </div>
+    <div class="panel"><table class="table"><thead><tr><th>Titre</th><th>Genre</th><th>Prix</th><th>Fichier</th><th>Vedette</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="singles-tbody"></tbody></table></div>
+  </div>
+
+  <!-- PAGE VEDETTE -->
+  <div id="page-featured" class="pc" style="display:none;">
+    <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:6px;">⭐ Contenus en <em style="color:var(--v-light);font-style:normal;">vedette</em></h2>
+    <p style="color:var(--muted);font-size:0.82rem;margin-bottom:1.4rem;">Les contenus en vedette apparaissent mis en avant sur la page d'accueil.</p>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-hdr"><div class="panel-ttl">💿 Albums <em>en vedette</em></div></div><div id="feat-albums"></div></div>
+      <div class="panel"><div class="panel-hdr"><div class="panel-ttl">🎵 Singles <em>en vedette</em></div></div><div id="feat-singles"></div></div>
+    </div>
+  </div>
+
+  <!-- PAGE USERS -->
+  <div id="page-users" class="pc" style="display:none;">
+    <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:1.4rem;">👥 Utilisateurs <em style="color:var(--v-light);font-style:normal;">inscrits</em></h2>
+    <div class="panel"><table class="table"><thead><tr><th>Nom</th><th>Email</th><th>Inscrit le</th><th>Achats</th><th>Statut</th></tr></thead><tbody id="users-tbody"></tbody></table></div>
+  </div>
+
+  <!-- PAGE ANNONCES -->
+  <div id="page-announce" class="pc" style="display:none;">
+    <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:1.4rem;">📢 Barre d'<em style="color:var(--v-light);font-style:normal;">annonces</em></h2>
+    <div class="panel">
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.1rem;">Ces messages défilent en temps réel sur toutes les pages du site.</p>
+      <div id="ann-list"></div>
+      <div style="display:flex;gap:9px;margin-top:4px;">
+        <input type="text" id="new-ann" placeholder="🎤 Concert le 20 Juillet à Ouagadougou…" style="flex:1;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;font-size:0.82rem;outline:none;" onkeydown="if(event.key==='Enter')addAnn()">
+        <button class="btn btn-primary" onclick="addAnn()">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE RETRAITS -->
+  <div id="page-withdrawals" class="pc" style="display:none;">
+    <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:1.4rem;">💰 Retraits & <em style="color:var(--v-light);font-style:normal;">Revenus</em></h2>
+    <div class="stats-grid" id="withdraw-stats"></div>
+    <div class="panel">
+      <div class="panel-hdr"><div class="panel-ttl">📋 Demandes de <em>retrait</em></div><button class="btn btn-primary btn-sm" onclick="openModal('m-withdraw')">+ Nouvelle demande</button></div>
+      <div id="withdraw-list"></div>
+    </div>
+  </div>
+
+  <!-- PAGE STATS -->
+  <div id="page-stats" class="pc" style="display:none;">
+    <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:1.4rem;">📈 Statistiques <em style="color:var(--v-light);font-style:normal;">globales</em></h2>
+    <div class="stats-grid" id="full-stats"></div>
+    <div class="panel">
+      <div class="panel-hdr"><div class="panel-ttl">🏆 Ventes par <em>contenu</em></div></div>
+      <div id="sales-list"></div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- MODALS -->
+<!-- ADD ALBUM -->
+<div class="modal-bg" id="m-add-album">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('m-add-album')">✕</button>
+    <h2>🎨 Nouvel <em>Album</em></h2>
+    <div class="field"><label>Pochette</label>
+      <div class="upload-zone" id="al-cover-zone"><input type="file" id="al-cover-input" accept="image/*" onchange="handleCover(this,'al-prev','al-cover-zone')"><div class="upload-icon">🖼️</div><p>Cliquez ou glissez une image</p><div class="hint">JPG, PNG · Min 500×500px</div></div>
+      <img id="al-prev" class="cover-prev" style="display:none;">
+    </div>
+    <div class="field"><label>Titre</label><input type="text" id="al-title" placeholder="Ex: Nuit Africaine Vol. 2"></div>
+    <div class="field-row">
+      <div class="field"><label>Genre</label><select id="al-genre"><option>Afrobeat</option><option>Hip-Hop / Rap</option><option>Gospel</option><option>Coupé-décalé</option><option>Soul / R&B</option><option>Electronic</option><option>World</option><option>Afro-Funk</option><option>Autre</option></select></div>
+      <div class="field"><label>Année</label><input type="number" id="al-year" value="2024"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Nb titres</label><input type="number" id="al-tracks" placeholder="10" min="1"></div>
+      <div class="field"><label>Prix (FCFA)</label><input type="number" id="al-price" placeholder="2500" step="100"></div>
+    </div>
+    <div class="field"><label>Description</label><textarea id="al-desc" placeholder="Décrivez cet album…"></textarea></div>
+    <div class="field"><label>Tag (optionnel)</label><input type="text" id="al-tag" placeholder="Nouveau, Populaire…"></div>
+    <div class="field"><label>🎵 Fichiers MP3 des titres (sélection multiple)</label>
+      <div class="upload-zone" id="al-audio-zone" onclick="document.getElementById('al-audio-file').click()">
+        <input type="file" id="al-audio-file" accept="audio/*,.mp3,.wav" multiple style="display:none;position:absolute;" onchange="handleMultiAudio(this)">
+        <div class="upload-icon">🎵</div>
+        <p>Cliquez pour sélectionner les MP3</p>
+        <div class="hint">MP3 ou WAV · Sélection multiple · Max 100 Mo chacun</div>
+      </div>
+      <div id="al-audio-list" style="margin-top:8px;"></div>
+    </div>
+    <div style="display:flex;gap:9px;margin-top:6px;">
+      <button class="btn btn-outline" style="flex:1;justify-content:center;" onclick="saveAlbum(true)">💾 Brouillon</button>
+      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="saveAlbum(false)">🚀 Publier</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ALBUM -->
+<div class="modal-bg" id="m-edit-album">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('m-edit-album')">✕</button>
+    <h2>✏️ Modifier l'<em>Album</em></h2>
+    <input type="hidden" id="edit-al-id">
+    <div class="field"><label>Pochette</label>
+      <div class="upload-zone" id="edit-al-cover-zone"><input type="file" id="edit-al-cover-input" accept="image/*" onchange="handleCover(this,'edit-al-prev','edit-al-cover-zone')"><div class="upload-icon">🖼️</div><p>Changer la pochette</p></div>
+      <img id="edit-al-prev" class="cover-prev" style="display:none;">
+    </div>
+    <div class="field"><label>Titre</label><input type="text" id="edit-al-title"></div>
+    <div class="field-row">
+      <div class="field"><label>Genre</label><input type="text" id="edit-al-genre"></div>
+      <div class="field"><label>Prix</label><input type="number" id="edit-al-price"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Titres</label><input type="number" id="edit-al-tracks"></div>
+      <div class="field"><label>Année</label><input type="number" id="edit-al-year"></div>
+    </div>
+    <div class="field"><label>Description</label><textarea id="edit-al-desc"></textarea></div>
+    <div class="field"><label>🎵 Remplacer le fichier audio (optionnel)</label>
+      <div class="upload-zone" id="edit-al-audio-zone" onclick="document.getElementById('edit-al-audio-file').click()" style="cursor:pointer;">
+        <input type="file" id="edit-al-audio-file" accept="audio/*,.mp3,.wav" multiple style="display:none;position:absolute;" onchange="handleMultiAudio2(this,'edit-al-audio-zone','edit-al-audio-name')">
+        <div class="upload-icon">🎵</div><p>Nouveau fichier audio</p><div class="hint">MP3, WAV ou ZIP</div>
+      </div>
+      <div id="edit-al-audio-name" style="font-size:0.75rem;color:var(--green);margin-top:5px;display:none;"></div>
+    </div>
+    <div style="display:flex;gap:9px;margin-top:6px;">
+      <button class="btn btn-outline" style="flex:1;justify-content:center;" onclick="closeModal('m-edit-album')">Annuler</button>
+      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="updateAlbum()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SINGLE -->
+<div class="modal-bg" id="m-add-single">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('m-add-single')">✕</button>
+    <h2>🎵 Nouveau <em>Single</em></h2>
+    <div class="field"><label>Image</label>
+      <div class="upload-zone" id="si-cover-zone"><input type="file" id="si-cover-input" accept="image/*" onchange="handleCover(this,'si-prev','si-cover-zone')"><div class="upload-icon">🖼️</div><p>Cliquez ou glissez</p><div class="hint">JPG, PNG</div></div>
+      <img id="si-prev" class="cover-prev" style="display:none;">
+    </div>
+    <div class="field"><label>Nom du titre</label><input type="text" id="si-title" placeholder="Ex: Lomé Soir"></div>
+    <div class="field-row">
+      <div class="field"><label>Genre</label><select id="si-genre"><option>Afrobeat</option><option>Hip-Hop / Rap</option><option>Gospel</option><option>Soul / R&B</option><option>Electronic</option><option>Afro-Funk</option><option>Autre</option></select></div>
+      <div class="field"><label>Prix (FCFA)</label><input type="number" id="si-price" placeholder="500" step="50"></div>
+    </div>
+    <div class="field"><label>Durée (ex: 3:42)</label><input type="text" id="si-dur" placeholder="3:42"></div>
+    <div class="field"><label>🎵 Fichier MP3</label>
+      <div class="upload-zone" id="si-audio-zone">
+        <input type="file" id="si-audio-file" accept=".mp3,.wav" onchange="handleAudio(this,'si-audio-zone','si-audio-name')">
+        <div class="upload-icon">🎵</div>
+        <p>Cliquez ou glissez le fichier MP3</p>
+        <div class="hint">MP3 ou WAV · Max 100 Mo</div>
+      </div>
+      <div id="si-audio-name" style="font-size:0.75rem;color:var(--green);margin-top:5px;display:none;"></div>
+    </div>
+    <div style="display:flex;gap:9px;margin-top:6px;">
+      <button class="btn btn-outline" style="flex:1;justify-content:center;" onclick="saveSingle(true)">💾 Brouillon</button>
+      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="saveSingle(false)">🚀 Publier</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT SINGLE -->
+<div class="modal-bg" id="m-edit-single">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('m-edit-single')">✕</button>
+    <h2>✏️ Modifier le <em>Single</em></h2>
+    <input type="hidden" id="edit-si-id">
+    <div class="field"><label>Titre</label><input type="text" id="edit-si-title"></div>
+    <div class="field-row">
+      <div class="field"><label>Genre</label><input type="text" id="edit-si-genre"></div>
+      <div class="field"><label>Prix</label><input type="number" id="edit-si-price"></div>
+    </div>
+    <div class="field"><label>🖼️ Changer la pochette (optionnel)</label>
+      <div class="upload-zone" id="edit-si-cover-zone" onclick="document.getElementById('edit-si-cover-input').click()" style="cursor:pointer;">
+        <input type="file" id="edit-si-cover-input" accept="image/*" style="display:none;" onchange="handleCover(this,'edit-si-prev','edit-si-cover-zone')">
+        <div class="upload-icon">🖼️</div><p>Cliquez pour changer l'image</p>
+      </div>
+      <img id="edit-si-prev" class="cover-prev" style="display:none;margin-top:6px;">
+    </div>
+    <div class="field"><label>🎵 Fichier MP3 (optionnel)</label>
+      <div class="upload-zone" id="edit-si-audio-zone" onclick="document.getElementById('edit-si-audio-file').click()" style="cursor:pointer;">
+        <input type="file" id="edit-si-audio-file" accept="audio/*,.mp3,.wav" style="display:none;" onchange="handleAudio(this,'edit-si-audio-zone','edit-si-audio-name')">
+        <div class="upload-icon">🎵</div>
+        <p>Cliquez pour sélectionner le MP3</p>
+        <div class="hint">MP3 ou WAV · Max 100 Mo</div>
+      </div>
+      <div id="edit-si-audio-name" style="font-size:0.75rem;color:var(--green);margin-top:5px;display:none;"></div>
+    </div>
+    <div style="display:flex;gap:9px;margin-top:6px;">
+      <button class="btn btn-outline" style="flex:1;justify-content:center;" onclick="closeModal('m-edit-single')">Annuler</button>
+      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="updateSingle()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- WITHDRAWAL -->
+<div class="modal-bg" id="m-withdraw">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('m-withdraw')">✕</button>
+    <h2>💰 Demande de <em>retrait</em></h2>
+    <div class="field"><label>Montant (FCFA)</label><input type="number" id="w-amount" placeholder="Ex: 50000" step="1000"></div>
+    <div class="field"><label>Méthode</label>
+      <select id="w-method"><option>Orange Money</option><option>MTN Mobile Money</option><option>Moov Money</option><option>Virement bancaire</option></select>
+    </div>
+    <div class="field"><label>Numéro / IBAN</label><input type="text" id="w-num" placeholder="Votre numéro ou IBAN"></div>
+    <div class="field"><label>Note (optionnel)</label><textarea id="w-note" placeholder="Information supplémentaire…"></textarea></div>
+    <button class="btn btn-primary" style="width:100%;padding:11px;margin-top:6px;" onclick="addWithdrawal()">Envoyer la demande</button>
+  </div>
+</div>
+
+<div class="toast" id="admin-toast"></div>
+
+<script src="fozila.js"></script>
+<script>
+// Guard
+const _u = FOZILA.getUser();
+if (!_u || !_u.isAdmin || !FOZILA.getToken()) location.href = 'auth.html';
+
+// ── STATE ──
+let coverData    = {};  // { 'al-prev': base64, ... }
+let withdrawals = [];
+
+// ── UTILS ──
+const grads  = ['linear-gradient(135deg,#1a0533,#4c1d95)','linear-gradient(135deg,#052e16,#166534)','linear-gradient(135deg,#1e1b4b,#3730a3)','linear-gradient(135deg,#450a0a,#991b1b)','linear-gradient(135deg,#431407,#9a3412)','linear-gradient(135deg,#0c4a6e,#0369a1)'];
+const emojis = ['🎵','🎸','🎹','🎤','🥁','🎶'];
+
+function toast(msg, type='') {
+  const t = document.getElementById('admin-toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3500);
+}
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target===m) m.classList.remove('open'); }));
+
+// Live time
+setInterval(() => {
+  const n = new Date();
+  document.getElementById('live-time').textContent = n.toLocaleTimeString('fr-FR');
+}, 1000);
+
+// ── PAGE NAVIGATION ──
+const pageTitles = { dashboard:'Tableau de <em>bord</em>', albums:'Gestion des <em>Albums</em>', singles:'Singles & <em>Titres</em>', featured:'Contenus en <em>vedette</em>', users:'<em>Utilisateurs</em>', announce:'Barre d\'<em>annonces</em>', withdrawals:'Retraits & <em>Revenus</em>', stats:'<em>Statistiques</em>' };
+function showPage(id) {
+  document.querySelectorAll('.pc').forEach(p => p.style.display = 'none');
+  document.getElementById('page-' + id).style.display = 'block';
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.textContent.toLowerCase().includes(id.slice(0,4))));
+  document.getElementById('page-title').innerHTML = pageTitles[id] || id;
+  const fn = { albums:renderAlbums, singles:renderSingles, users:renderUsers, announce:renderAnn, featured:renderFeatured, stats:renderStats, withdrawals:renderWithdrawals, dashboard:renderDash };
+  if (fn[id]) fn[id]();
+}
+
+// ── COVER HANDLER ──
+function handleCover(input, prevId, zoneId) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    coverData[prevId] = e.target.result;
+    const prev = document.getElementById(prevId);
+    prev.src = e.target.result; prev.style.display = 'block';
+    if (zoneId) document.getElementById(zoneId).style.borderColor = 'var(--v)';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+// ── MULTI AUDIO HANDLER ──
+function handleMultiAudio(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  const zone = document.getElementById('al-audio-zone');
+  zone.style.borderColor = 'var(--green)';
+  zone.querySelector('p').textContent = `✓ ${files.length} fichier(s) sélectionné(s)`;
+  const list = document.getElementById('al-audio-list');
+  list.innerHTML = files.map((f,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--card2);border-radius:7px;margin-bottom:4px;font-size:12px;">
+      <span style="color:var(--green);">🎵</span>
+      <span style="flex:1;">${f.name}</span>
+      <span style="color:var(--muted);">${(f.size/1024/1024).toFixed(1)} Mo</span>
+    </div>`).join('');
+}
+
+// ── MULTI AUDIO HANDLER 2 (edit album) ──
+function handleMultiAudio2(input, zoneId, nameId) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  const zone = document.getElementById(zoneId);
+  if (zone) {
+    zone.style.borderColor = 'var(--green)';
+    const p = zone.querySelector('p');
+    if (p) p.textContent = '✓ ' + files.length + ' fichier(s) sélectionné(s)';
+  }
+  const nameEl = document.getElementById(nameId);
+  if (nameEl) { nameEl.textContent = files.map(f => f.name).join(', '); nameEl.style.display = 'block'; }
+}
+
+// ── AUDIO HANDLER ──
+function handleAudio(input, zoneId, nameId) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  if (zoneId) {
+    const zone = document.getElementById(zoneId);
+    zone.style.borderColor = 'var(--green)';
+    zone.querySelector('p').textContent = '✓ ' + file.name;
+  }
+  if (nameId) {
+    const nameEl = document.getElementById(nameId);
+    if (nameEl) { nameEl.textContent = '✓ ' + file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' Mo)'; nameEl.style.display = 'block'; }
+  }
+}
+
+// ── ALBUMS ──
+let _albumsCache = [];
+
+async function saveAlbum(draft) {
+  const title = document.getElementById('al-title').value.trim();
+  if (!title) { toast('Entrez un titre','error'); return; }
+  const formData = new FormData();
+  formData.append('title',       title);
+  formData.append('genre',       document.getElementById('al-genre').value);
+  formData.append('year',        document.getElementById('al-year').value);
+  formData.append('tracks',      document.getElementById('al-tracks').value || 10);
+  formData.append('price',       document.getElementById('al-price').value);
+  formData.append('description', document.getElementById('al-desc').value);
+  formData.append('tag',         document.getElementById('al-tag').value);
+  formData.append('featured',    '0');
+  formData.append('is_active',   draft ? '0' : '1');
+  const coverFile = document.getElementById('al-cover-input') ? document.getElementById('al-cover-input').files[0] : null;
+  if (coverFile) formData.append('cover', coverFile);
+  try {
+    const res  = await fetch(FOZILA.API+'/albums', { method:'POST', headers:{'Authorization':'Bearer '+FOZILA.getToken()}, body:formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    // Upload tous les MP3 en une seule requête
+    const audioFiles = document.getElementById('al-audio-file').files;
+    if (audioFiles.length && data.album) {
+      const af = new FormData();
+      for (let i = 0; i < audioFiles.length; i++) {
+        af.append('audio', audioFiles[i]);
+      }
+      const audioRes = await fetch(FOZILA.API+'/albums/'+data.album.id+'/audio', {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + FOZILA.getToken() },
+        body: af
+      });
+      if (!audioRes.ok) {
+        const err = await audioRes.json();
+        toast('⚠️ Album créé mais erreur audio : ' + err.error, 'error');
+      }
+    }
+    ['al-title','al-desc','al-tag','al-tracks','al-price'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+    const prev = document.getElementById('al-prev'); if(prev) prev.style.display='none';
+    const zone = document.getElementById('al-audio-zone'); if(zone) { zone.querySelector('p').textContent='Cliquez pour sélectionner les MP3'; zone.style.borderColor=''; }
+    const lst  = document.getElementById('al-audio-list'); if(lst) lst.innerHTML='';
+    closeModal('m-add-album');
+    toast(draft ? '💾 Brouillon sauvegardé' : '🚀 Album publié !', 'success');
+    renderAlbums(); renderDash();
+  } catch(err) { toast(err.message || 'Erreur création album', 'error'); }
+}
+
+async function openEditAlbum(id) {
+  const a = _albumsCache.find(x=>x.id===id); if(!a) return;
+  document.getElementById('edit-al-id').value     = id;
+  document.getElementById('edit-al-title').value   = a.title;
+  document.getElementById('edit-al-genre').value   = a.genre;
+  document.getElementById('edit-al-price').value   = a.price;
+  document.getElementById('edit-al-tracks').value  = a.tracks;
+  document.getElementById('edit-al-year').value    = a.year;
+  document.getElementById('edit-al-desc').value    = a.description || '';
+  const prev = document.getElementById('edit-al-prev');
+  if (a.cover_path) { prev.src = a.cover_path; prev.style.display='block'; } else prev.style.display='none';
+  openModal('m-edit-album');
+}
+
+async function updateAlbum() {
+  const id = parseInt(document.getElementById('edit-al-id').value);
+  const formData = new FormData();
+  formData.append('title',       document.getElementById('edit-al-title').value.trim());
+  formData.append('genre',       document.getElementById('edit-al-genre').value.trim());
+  formData.append('price',       document.getElementById('edit-al-price').value);
+  formData.append('tracks',      document.getElementById('edit-al-tracks').value);
+  formData.append('year',        document.getElementById('edit-al-year').value);
+  formData.append('description', document.getElementById('edit-al-desc').value);
+  const coverFile = document.getElementById('edit-al-cover-input'); 
+  if (coverFile && coverFile.files[0]) formData.append('cover', coverFile.files[0]);
+  try {
+    const res = await fetch(FOZILA.API+'/albums/'+id, { method:'PUT', headers:{'Authorization':'Bearer '+FOZILA.getToken()}, body:formData });
+    if (!res.ok) throw new Error((await res.json()).error);
+    const audioFile = document.getElementById('edit-al-audio-file');
+    if (audioFile && audioFile.files[0]) {
+      const af = new FormData(); af.append('audio', audioFile.files[0]);
+      await fetch(FOZILA.API+'/albums/'+id+'/audio', { method:'PUT', headers:{'Authorization':'Bearer '+FOZILA.getToken()}, body:af });
+    }
+    closeModal('m-edit-album'); renderAlbums();
+    toast('✓ Album mis à jour', 'success');
+  } catch(err) { toast(err.message || 'Erreur', 'error'); }
+}
+
+async function deleteAlbum(id) {
+  const a = _albumsCache.find(x=>x.id===id);
+  if (!a || !confirm('Supprimer "'+a.title+'" ?')) return;
+  try {
+    const res = await fetch(FOZILA.API+'/albums/'+id, { method:'DELETE', headers:{'Authorization':'Bearer '+FOZILA.getToken()} });
+    if (!res.ok) throw new Error((await res.json()).error);
+    renderAlbums(); renderDash(); toast('Album supprimé');
+  } catch(err) { toast('Erreur suppression', 'error'); }
+}
+
+async function toggleFeaturedAlbum(id) {
+  const a = _albumsCache.find(x=>x.id===id); if(!a) return;
+  const f = new FormData(); f.append('featured', a.featured ? '0' : '1');
+  try {
+    await fetch(FOZILA.API+'/albums/'+id, { method:'PUT', headers:{'Authorization':'Bearer '+FOZILA.getToken()}, body:f });
+    toast(a.featured ? 'Retiré de la vedette' : '⭐ Album mis en vedette', 'success');
+    renderAlbums(); renderFeatured();
+  } catch(err) { toast('Erreur', 'error'); }
+}
+
+async function renderAlbums() {
+  try {
+    FOZILA._cache.albums = null; // vider le cache avant de charger
+    const albums = await FOZILA.getAlbums();
+    _albumsCache = albums;
+    document.getElementById('albums-tbody').innerHTML = albums.length
+      ? albums.map(a=>`
+        <tr>
+          <td><div class="chip"><div class="chip-art" style="background:${a.cover_path?'none':a.grad}">${a.cover_path?`<img src="${a.cover_path}" style="width:100%;height:100%;object-fit:cover;border-radius:5px;">`:`${a.emoji}`}</div><div><div class="chip-title">${a.title}</div><div class="chip-sub">${a.year}</div></div></div></td>
+          <td><span class="badge bv">${a.genre}</span></td>
+          <td>${a.tracks}</td>
+          <td><span class="price-pill">${FOZILA.fmt(a.price)}</span></td>
+          <td><span style="font-size:1.1rem;" title="${a.file_path?'Fichier disponible':'Aucun fichier audio'}">${a.file_path?'✅':'❌'}</span></td>
+          <td><span class="feat-star" style="cursor:pointer;opacity:${a.featured?1:0.25};" onclick="toggleFeaturedAlbum(${a.id})">⭐</span></td>
+          <td><span class="badge ${a.is_active?'bl':'bd'}">${a.is_active?'En ligne':'Brouillon'}</span></td>
+          <td><div class="act"><button class="btn btn-outline btn-xs" onclick="openEditAlbum(${a.id})">✏️</button><button class="btn btn-danger btn-xs" onclick="deleteAlbum(${a.id})">🗑️</button></div></td>
+        </tr>`).join('')
+      : '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:28px;">Aucun album. Ajoutez-en un !</td></tr>';
+  } catch(err) {
+    toast('Erreur chargement albums : ' + err.message, 'error');
+  }
+}
+
+// ── SINGLES ──
+let _singlesCache = [];
+
+async function saveSingle(draft) {
+  const title = document.getElementById('si-title').value.trim();
+  if (!title) { toast('Entrez un titre','error'); return; }
+
+  // Étape 1 : Créer le single
+  const formData = new FormData();
+  formData.append('title',    title);
+  formData.append('genre',    document.getElementById('si-genre').value);
+  formData.append('price',    document.getElementById('si-price').value);
+  formData.append('duration', document.getElementById('si-dur').value||'3:30');
+  formData.append('live',     draft ? '0' : '1');
+  formData.append('featured', '0');
+  const coverFile = document.getElementById('si-cover-input');
+  if (coverFile && coverFile.files[0]) formData.append('cover', coverFile.files[0]);
+
+  try {
+    const res = await fetch(FOZILA.API+'/singles', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + FOZILA.getToken() },
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    // Étape 2 : Upload audio séparément avec vérification
+    const audioInput = document.getElementById('si-audio-file');
+    const audioFile  = audioInput ? audioInput.files[0] : null;
+
+    if (audioFile && data.single) {
+      toast('⏳ Upload audio en cours…', 'info');
+      const af = new FormData();
+      af.append('audio', audioFile);
+      const audioRes = await fetch(FOZILA.API+'/singles/' + data.single.id + '/audio', {
+        method:  'PUT',
+        headers: { 'Authorization': 'Bearer ' + FOZILA.getToken() },
+        body:    af
+      });
+      const audioData = await audioRes.json();
+      if (!audioRes.ok) {
+        toast('⚠️ Single créé mais audio échoué : ' + audioData.error, 'error');
+      } else {
+        toast('✅ ' + audioData.message, 'success');
+      }
+    }
+
+    // Reset formulaire
+    ['si-title','si-price','si-dur'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    const prevEl = document.getElementById('si-prev'); if (prevEl) prevEl.style.display = 'none';
+    const zoneEl = document.getElementById('si-audio-zone');
+    if (zoneEl) { zoneEl.querySelector('p').textContent = 'Cliquez ou glissez le fichier MP3'; zoneEl.style.borderColor = ''; }
+
+    closeModal('m-add-single');
+    if (!audioFile) toast(draft ? '💾 Brouillon sauvegardé' : '🚀 Single publié !', 'success');
+    renderSingles();
+  } catch(err) { toast(err.message || 'Erreur création single', 'error'); }
+}
+
+async function openEditSingle(id) {
+  const si = _singlesCache.find(x=>x.id===id); if(!si) return;
+  document.getElementById('edit-si-id').value    = id;
+  document.getElementById('edit-si-title').value  = si.title;
+  document.getElementById('edit-si-genre').value  = si.genre;
+  document.getElementById('edit-si-price').value  = si.price;
+
+  // Cover existante
+  const prev = document.getElementById('edit-si-prev');
+  if (prev) {
+    if (si.cover_path) { prev.src = si.cover_path; prev.style.display = 'block'; }
+    else prev.style.display = 'none';
+  }
+  // Zone audio
+  const audioZone = document.getElementById('edit-si-audio-zone');
+  if (audioZone) {
+    const p = audioZone.querySelector('p');
+    if (p) p.textContent = si.file_path ? '✓ Audio présent — cliquez pour remplacer' : 'Cliquez pour sélectionner le MP3';
+    audioZone.style.borderColor = si.file_path ? 'var(--green)' : '';
+  }
+  const audioInput = document.getElementById('edit-si-audio-file');
+  if (audioInput) audioInput.value = '';
+  const audioName = document.getElementById('edit-si-audio-name');
+  if (audioName) { audioName.style.display = 'none'; }
+
+  openModal('m-edit-single');
+}
+
+async function updateSingle() {
+  const id = parseInt(document.getElementById('edit-si-id').value);
+  const formData = new FormData();
+  formData.append('title', document.getElementById('edit-si-title').value.trim());
+  formData.append('genre', document.getElementById('edit-si-genre').value.trim());
+  formData.append('price', document.getElementById('edit-si-price').value);
+  const coverInput = document.getElementById('edit-si-cover-input');
+  if (coverInput && coverInput.files[0]) formData.append('cover', coverInput.files[0]);
+  try {
+    const res = await fetch(FOZILA.API+'/singles/'+id, { method:'PUT', headers:{'Authorization':'Bearer '+FOZILA.getToken()}, body:formData });
+    if (!res.ok) throw new Error((await res.json()).error);
+    // Upload audio si fourni
+    const audioInput = document.getElementById('edit-si-audio-file');
+    if (audioInput && audioInput.files[0]) {
+      toast('⏳ Upload audio en cours…', 'info');
+      const af = new FormData();
+      af.append('audio', audioInput.files[0]);
+      const audioRes = await fetch(FOZILA.API+'/singles/'+id+'/audio', {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + FOZILA.getToken() },
+        body: af
+      });
+      const audioData = await audioRes.json();
+      if (!audioRes.ok) toast('⚠️ Erreur audio : ' + audioData.error, 'error');
+      else toast('✅ ' + audioData.message, 'success');
+    }
+    closeModal('m-edit-single');
+    FOZILA._cache.singles = null;
+    renderSingles();
+    if (!audioInput || !audioInput.files[0]) toast('✓ Single mis à jour', 'success');
+  } catch(err) { toast(err.message||'Erreur','error'); }
+}
+
+async function deleteSingle(id) {
+  const s = _singlesCache.find(x=>x.id===id);
+  if (!s||!confirm('Supprimer "'+s.title+'" ?')) return;
+  try {
+    await fetch(FOZILA.API+'/singles/'+id, { method:'DELETE', headers:{'Authorization':'Bearer '+FOZILA.getToken()} });
+    renderSingles(); toast('Single supprimé');
+  } catch(err) { toast('Erreur suppression','error'); }
+}
+
+async function toggleFeaturedSingle(id) {
+  const s = _singlesCache.find(x=>x.id===id); if(!s) return;
+  const f = new FormData(); f.append('featured', s.featured ? '0' : '1');
+  try {
+    await fetch(FOZILA.API+'/singles/'+id, { method:'PUT', headers:{'Authorization':'Bearer '+FOZILA.getToken()}, body:f });
+    toast(s.featured?'Retiré':'⭐ Single mis en vedette','success');
+    renderSingles(); renderFeatured();
+  } catch(err) { toast('Erreur','error'); }
+}
+
+async function renderSingles() {
+  const singles = await FOZILA.getSingles();
+  _singlesCache = singles;
+  // Charger TOUS les singles (y compris brouillons) pour l'admin
+  let all = singles;
+  try {
+    const res = await fetch(FOZILA.API+'/singles', { headers:{'Authorization':'Bearer '+FOZILA.getToken()} });
+    all = await res.json();
+    _singlesCache = all;
+  } catch {}
+  document.getElementById('singles-tbody').innerHTML = all.length
+    ? all.map(s=>`
+      <tr>
+        <td><div class="chip"><div class="chip-art" style="background:${s.cover_path?'none':s.grad}">${s.cover_path?`<img src="${s.cover_path}">`:`${s.emoji}`}</div><div><div class="chip-title">${s.title}</div><div class="chip-sub">Single · ${s.duration||'—'}</div></div></div></td>
+        <td style="color:var(--muted);font-size:0.78rem;">${s.genre}</td>
+        <td><span class="price-pill">${FOZILA.fmt(s.price)}</span></td>
+        <td><span class="badge ${s.file_path?'bl':'bd'}">${s.file_path?'✅':'❌'}</span></td>
+        <td><span class="feat-star" style="cursor:pointer;opacity:${s.featured?1:0.25};" onclick="toggleFeaturedSingle(${s.id})">⭐</span></td>
+        <td><span class="badge ${s.live?'bl':'bd'}">${s.live?'En ligne':'Brouillon'}</span></td>
+        <td><div class="act"><button class="btn btn-outline btn-xs" onclick="openEditSingle(${s.id})">✏️</button><button class="btn btn-danger btn-xs" onclick="deleteSingle(${s.id})">🗑️</button></div></td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:28px;">Aucun single</td></tr>';
+}
+
+// ── FEATURED ──
+async function renderFeatured() {
+  const [albums, singles] = await Promise.all([FOZILA.getAlbums(), FOZILA.getSingles()]);
+  const featAlbums  = albums.filter(a=>a.featured);
+  const featSingles = singles.filter(s=>s.featured);
+  document.getElementById('feat-albums').innerHTML = featAlbums.length
+    ? featAlbums.map(a=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div class="chip-art" style="background:${a.cover_path?'none':a.grad};width:38px;height:38px;border-radius:7px;font-size:1rem;flex-shrink:0;">${a.cover_path?`<img src="${a.cover_path}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;">`:`${a.emoji}`}</div>
+        <div style="flex:1;"><div style="font-size:0.85rem;font-weight:600;">${a.title}</div><div style="font-size:0.7rem;color:var(--muted);">${a.genre}</div></div>
+        <button class="btn btn-danger btn-xs" onclick="toggleFeaturedAlbum(${a.id})">Retirer</button>
+      </div>`).join('')
+    : '<p style="color:var(--muted);font-size:0.82rem;padding:16px 0;">Aucun album en vedette. Activez ⭐ dans la gestion des albums.</p>';
+  document.getElementById('feat-singles').innerHTML = featSingles.length
+    ? featSingles.map(s=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div class="chip-art" style="background:${s.grad};width:38px;height:38px;border-radius:7px;font-size:1rem;flex-shrink:0;">${s.emoji}</div>
+        <div style="flex:1;"><div style="font-size:0.85rem;font-weight:600;">${s.title}</div><div style="font-size:0.7rem;color:var(--muted);">${s.genre}</div></div>
+        <button class="btn btn-danger btn-xs" onclick="toggleFeaturedSingle(${s.id})">Retirer</button>
+      </div>`).join('')
+    : '<p style="color:var(--muted);font-size:0.82rem;padding:16px 0;">Aucun single en vedette.</p>';
+}
+
+// ── USERS ──
+async function renderUsers() {
+  try {
+    const users = await FOZILA.api('GET', '/admin/users');
+    document.getElementById('users-tbody').innerHTML = users.length
+      ? users.map(u=>`<tr>
+          <td style="font-weight:600;">${u.name}</td>
+          <td style="color:var(--muted);font-size:0.78rem;">${u.email}</td>
+          <td style="color:var(--muted);font-size:0.78rem;">${new Date(u.created_at).toLocaleDateString('fr-FR')}</td>
+          <td><span class="badge bv">${u.purchase_count||0}</span></td>
+          <td><span class="badge ${u.is_admin?'bg':'bl'}">${u.is_admin?'Admin':'Actif'}</span></td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px;">Aucun utilisateur</td></tr>';
+  } catch(err) { toast('Erreur chargement utilisateurs','error'); }
+}
+
+// ── ANNONCES ──
+let _annCache = [];
+async function renderAnn() {
+  try {
+    const res = await fetch(FOZILA.API+'/announcements', { headers:{'Authorization':'Bearer '+FOZILA.getToken()} });
+    // Charger la liste complète avec IDs via admin
+    const full = await FOZILA.api('GET', '/admin/stats'); // on utilise une autre approche
+  } catch {}
+  // Fallback : charger via endpoint public
+  try {
+    const res = await fetch(FOZILA.API+'/announcements');
+    const list = await res.json();
+    document.getElementById('ann-list').innerHTML = list.length
+      ? list.map((a,i)=>`<div class="ann-row"><span>${a}</span></div>`).join('')
+      : '<p style="color:var(--muted);font-size:0.82rem;margin-bottom:10px;">Aucune annonce.</p>';
+  } catch(err) { toast('Erreur chargement annonces','error'); }
+}
+async function addAnn() {
+  const v = document.getElementById('new-ann').value.trim();
+  if (!v) return;
+  try {
+    await FOZILA.api('POST', '/announcements', { content: v });
+    document.getElementById('new-ann').value = '';
+    FOZILA._cache.announcements = null;
+    renderAnn(); toast('Annonce ajoutée !','success');
+  } catch(err) { toast(err.message||'Erreur','error'); }
+}
+async function removeAnn(i) {
+  toast("Pour supprimer une annonce, utilisez l'API directement (feature à venir)", 'info');
+}
+
+// ── VISITEURS ──
+function setVisitors() {
+  const v = parseInt(document.getElementById('visitor-input').value);
+  if (!v || v < 0) { toast('Entrez un nombre valide','error'); return; }
+  localStorage.setItem('fozila_visitors', v);
+  document.getElementById('visitor-count-display').textContent = v.toLocaleString('fr-FR');
+  document.getElementById('visitor-input').value = '';
+  toast('✓ Compteur mis à jour : ' + v.toLocaleString('fr-FR'), 'success');
+}
+
+// ── RETRAITS ──
+async function addWithdrawal() {
+  const amount = parseInt(document.getElementById('w-amount').value);
+  const method = document.getElementById('w-method').value;
+  const num    = document.getElementById('w-num').value.trim();
+  const note   = document.getElementById('w-note').value.trim();
+  if (!amount||!num) { toast('Remplissez tous les champs','error'); return; }
+  try {
+    await FOZILA.api('POST', '/admin/withdrawals', { amount, method, phone: num, note });
+    ['w-amount','w-num','w-note'].forEach(id=>document.getElementById(id).value='');
+    closeModal('m-withdraw'); renderWithdrawals();
+    toast('✓ Demande de retrait envoyée','success');
+  } catch(err) { toast(err.message||'Erreur','error'); }
+}
+
+async function updateWithdrawalStatus(id, status) {
+  try {
+    await FOZILA.api('PUT', '/admin/withdrawals/'+id, { status });
+    renderWithdrawals();
+    toast('Statut mis à jour : ' + status, 'success');
+  } catch(err) { toast(err.message||'Erreur','error'); }
+}
+
+async function renderWithdrawals() {
+  try {
+    const stats = await FOZILA.api('GET', '/admin/stats');
+    const ws    = await FOZILA.api('GET', '/admin/withdrawals');
+    const paid    = ws.filter(w=>w.status==='paid').reduce((s,w)=>s+w.amount,0);
+    const pending = ws.filter(w=>w.status==='pending').reduce((s,w)=>s+w.amount,0);
+    const revenue = stats.stats.revenue || 0;
+    document.getElementById('withdraw-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-icon si-g">💰</div><div class="stat-val sv-g" style="font-size:1.1rem;">${FOZILA.fmt(revenue)}</div><div class="stat-lbl">Revenus totaux</div></div>
+      <div class="stat-card"><div class="stat-icon si-v">✅</div><div class="stat-val sv-v" style="font-size:1.1rem;">${FOZILA.fmt(paid)}</div><div class="stat-lbl">Retraits effectués</div></div>
+      <div class="stat-card"><div class="stat-icon si-gold">⏳</div><div class="stat-val sv-gold" style="font-size:1.1rem;">${FOZILA.fmt(pending)}</div><div class="stat-lbl">En attente</div></div>
+      <div class="stat-card"><div class="stat-icon si-r">💎</div><div class="stat-val sv-r" style="font-size:1.1rem;">${FOZILA.fmt(Math.max(0,revenue-paid))}</div><div class="stat-lbl">Solde disponible</div></div>
+    `;
+    const statusLabels = { pending:'⏳ En attente', paid:'✅ Payé', rejected:'❌ Refusé' };
+    const statusBadge  = { pending:'bg', paid:'bl', rejected:'br' };
+    document.getElementById('withdraw-list').innerHTML = ws.length
+      ? ws.map(w=>`
+        <div class="withdraw-row">
+          <div style="font-size:1.1rem;">${w.method.includes('Orange')?'🟠':w.method.includes('MTN')?'🟡':w.method.includes('Moov')?'🔵':'🏦'}</div>
+          <div style="flex:1;">
+            <div style="font-size:0.88rem;font-weight:600;">${FOZILA.fmt(w.amount)} — ${w.method}</div>
+            <div style="font-size:0.72rem;color:var(--muted);">${w.phone} · ${new Date(w.created_at).toLocaleDateString('fr-FR')}</div>
+            ${w.note?`<div style="font-size:0.72rem;color:var(--muted);margin-top:2px;font-style:italic;">${w.note}</div>`:''}
+          </div>
+          <span class="badge ${statusBadge[w.status]||'bd'}">${statusLabels[w.status]||w.status}</span>
+          ${w.status==='pending'?`<div class="act"><button class="btn btn-green btn-xs" onclick="updateWithdrawalStatus(${w.id},'paid')">✓ Payer</button><button class="btn btn-danger btn-xs" onclick="updateWithdrawalStatus(${w.id},'rejected')">✕</button></div>`:''}
+        </div>`).join('')
+      : '<p style="color:var(--muted);font-size:0.84rem;text-align:center;padding:28px;">Aucune demande de retrait.</p>';
+  } catch(err) { toast('Erreur chargement retraits','error'); }
+}
+
+// ── STATS ──
+async function renderStats() {
+  try {
+    const data = await FOZILA.api('GET', '/admin/stats');
+    const { stats, topAlbums, topSingles } = data;
+    document.getElementById('full-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-icon si-v">💿</div><div class="stat-val sv-v">${stats.albums}</div><div class="stat-lbl">Albums</div></div>
+      <div class="stat-card"><div class="stat-icon si-g">🎵</div><div class="stat-val sv-g">${stats.singles}</div><div class="stat-lbl">Singles</div></div>
+      <div class="stat-card"><div class="stat-icon si-gold">👥</div><div class="stat-val sv-gold">${stats.users}</div><div class="stat-lbl">Utilisateurs</div></div>
+      <div class="stat-card"><div class="stat-icon si-r">💰</div><div class="stat-val sv-r" style="font-size:1rem;">${FOZILA.fmt(stats.revenue)}</div><div class="stat-lbl">Revenus</div></div>
+    `;
+    const all = [...topAlbums.map(a=>({...a,_type:'Album'})), ...topSingles.map(s=>({...s,_type:'Single'}))].sort((a,b)=>(b.sales||0)-(a.sales||0));
+    document.getElementById('sales-list').innerHTML = all.map(item => {
+      const pct = Math.min(100,(item.sales||0)*2+5);
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div class="chip-art" style="background:${item.grad};width:34px;height:34px;border-radius:7px;font-size:0.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${item.emoji}</div>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+            <span style="font-size:0.83rem;font-weight:600;">${item.title} <span style="font-size:0.68rem;color:var(--muted);">${item._type}</span></span>
+            <span style="font-size:0.76rem;color:var(--v-light);">${item.sales||0} vente(s)</span>
+          </div>
+          <div style="background:var(--surface2);border-radius:100px;height:4px;"><div style="background:var(--v);border-radius:100px;height:4px;width:${pct}%;"></div></div>
+        </div>
+        <span class="price-pill">${FOZILA.fmt((item.price||0)*(item.sales||0))}</span>
+      </div>`;
+    }).join('');
+  } catch(err) { toast('Erreur statistiques','error'); }
+}
+
+// ── DASHBOARD ──
+async function renderDash() {
+  try {
+    const data = await FOZILA.api('GET', '/admin/stats');
+    const { stats, recentPurchases } = data;
+    document.getElementById('dash-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-icon si-v">💿</div><div class="stat-val sv-v">${stats.albums}</div><div class="stat-lbl">Albums publiés</div><div class="stat-trend">↑ actifs</div></div>
+      <div class="stat-card"><div class="stat-icon si-g">🎵</div><div class="stat-val sv-g">${stats.singles}</div><div class="stat-lbl">Singles en ligne</div></div>
+      <div class="stat-card"><div class="stat-icon si-gold">👥</div><div class="stat-val sv-gold">${stats.users}</div><div class="stat-lbl">Utilisateurs</div></div>
+      <div class="stat-card"><div class="stat-icon si-r">💰</div><div class="stat-val sv-r" style="font-size:1rem;">${FOZILA.fmt(stats.revenue)}</div><div class="stat-lbl">Revenus</div></div>
+    `;
+    document.getElementById('total-revenue').textContent = FOZILA.fmt(stats.revenue);
+
+    // Chart simulé (à remplacer par vraies données plus tard)
+    const months = ['Jan','Fév','Mar','Avr','Mai','Juin'];
+    const values = [35,52,38,70,58,90];
+    document.getElementById('revenue-chart').innerHTML = months.map((m,i)=>`
+      <div class="bar-wrap">
+        <div class="bar" style="height:${values[i]}%;${i===5?'background:rgba(124,58,237,0.45);':''}"></div>
+        <div class="bar-lbl" style="${i===5?'color:var(--v-light);':''}">${m}</div>
+      </div>`).join('');
+
+    // Derniers achats
+    document.getElementById('dash-recent').innerHTML = recentPurchases.length
+      ? recentPurchases.slice(0,3).map(p=>`
+        <div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--border);">
+          <div style="width:36px;height:36px;border-radius:7px;background:var(--v-dim);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;">🎵</div>
+          <div style="flex:1;"><div style="font-size:0.83rem;font-weight:600;">${p.item_type==='album'?'💿':'🎵'} Achat · ${p.user_name}</div><div style="font-size:0.68rem;color:var(--muted);">${FOZILA.timeAgo(p.purchased_at)}</div></div>
+          <span class="price-pill">${FOZILA.fmt(p.amount)}</span>
+        </div>`).join('')
+      : '<p style="color:var(--muted);font-size:0.82rem;padding:12px 0;">Aucun achat récent.</p>';
+
+    document.getElementById('visitor-count-display').textContent = FOZILA.getVisitors().toLocaleString('fr-FR');
+  } catch(err) { console.error(err); toast('Erreur chargement dashboard','error'); }
+}
+
+// INIT
+renderDash();
+</script>
+</body>
+</html>

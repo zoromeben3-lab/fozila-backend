@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fozila — Albums</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="fozila.css"/>
+  <style>
+    .toolbar { display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px; }
+    .search-bar { display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0 14px;flex:1;min-width:200px;max-width:340px; }
+    .search-bar input { background:none;border:none;color:var(--text);font-family:inherit;font-size:14px;padding:10px 0;outline:none;width:100%; }
+    .search-bar input::placeholder { color:var(--muted); }
+    .filters { display:flex;gap:8px;flex-wrap:wrap; }
+    .filter-btn { background:var(--card);border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:100px;cursor:pointer;font-size:12px;font-family:inherit;transition:all 0.2s; }
+    .filter-btn:hover,.filter-btn.active { border-color:var(--v);color:var(--v-light);background:var(--v-dim); }
+    .sort-select { background:var(--card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:10px;font-family:inherit;font-size:13px;outline:none;cursor:pointer; }
+    .albums-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px; }
+    .owned-badge { position:absolute;top:10px;right:10px;background:var(--green);color:#fff;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700; }
+    .no-results { text-align:center;padding:60px 20px;color:var(--muted); }
+    .no-results .icon { font-size:48px;margin-bottom:12px; }
+    @media(max-width:640px){ .albums-grid{grid-template-columns:repeat(2,1fr);} .toolbar{flex-direction:column;align-items:stretch;} }
+  </style>
+</head>
+<body>
+  <div id="announce-bar"></div>
+  <nav id="main-nav"></nav>
+
+  <div class="section-wrap">
+    <div class="section-label">Catalogue</div>
+    <h1 class="section-title">Tous les albums</h1>
+    <p class="section-sub">Achetez et téléchargez en quelques secondes</p>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="search-bar">
+        <span>🔍</span>
+        <input type="text" id="search-input" placeholder="Rechercher un album…" oninput="applyFilters()"/>
+      </div>
+      <select class="sort-select" id="sort-select" onchange="applyFilters()">
+        <option value="default">Trier par : défaut</option>
+        <option value="price-asc">Prix croissant</option>
+        <option value="price-desc">Prix décroissant</option>
+        <option value="popular">Popularité</option>
+        <option value="newest">Plus récent</option>
+      </select>
+    </div>
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-genre="all">Tous</button>
+    </div>
+
+    <div style="margin-top:24px;">
+      <div class="albums-grid" id="albums-grid"></div>
+      <div class="no-results" id="no-results" style="display:none;">
+        <div class="icon">🔍</div>
+        <p>Aucun album trouvé pour cette recherche.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="fozila.js"></script>
+  <script>
+    FOZILA.injectNav('albums');
+    FOZILA.injectAnnounce();
+
+    let allAlbums = [];
+    const user = FOZILA.getUser();
+
+    async function init() {
+      allAlbums = await FOZILA.getAlbums();
+
+      // Filtres genre dynamiques
+      const genres = [...new Set(allAlbums.map(a => a.genre))];
+      const filtersEl = document.getElementById('filters');
+      genres.forEach(g => {
+        filtersEl.innerHTML += `<button class="filter-btn" data-genre="${g}">${g}</button>`;
+      });
+      filtersEl.addEventListener('click', e => {
+        const btn = e.target.closest('.filter-btn');
+        if (!btn) return;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyFilters();
+      });
+
+      // Recherche depuis l'URL ?q=
+      const urlQ = new URLSearchParams(location.search).get('q');
+      if (urlQ) document.getElementById('search-input').value = urlQ;
+
+      applyFilters();
+    }
+
+    async function applyFilters() {
+      const q     = document.getElementById('search-input').value.toLowerCase().trim();
+      const genre = document.querySelector('.filter-btn.active')?.dataset.genre || 'all';
+      const sort  = document.getElementById('sort-select').value;
+
+      let list = [...allAlbums];
+      if (genre !== 'all') list = list.filter(a => a.genre === genre);
+      if (q) list = list.filter(a => a.title.toLowerCase().includes(q) || a.genre.toLowerCase().includes(q));
+      if (sort === 'price-asc')  list.sort((a,b) => a.price - b.price);
+      if (sort === 'price-desc') list.sort((a,b) => b.price - a.price);
+      if (sort === 'popular')    list.sort((a,b) => (b.sales||0) - (a.sales||0));
+      if (sort === 'newest')     list.sort((a,b) => b.year - a.year);
+
+      await renderAlbums(list);
+    }
+
+    async function renderAlbums(list) {
+      const grid = document.getElementById('albums-grid');
+      const none = document.getElementById('no-results');
+      if (!list.length) { grid.innerHTML = ''; none.style.display = 'block'; return; }
+      none.style.display = 'none';
+
+      // Vérifier possession si connecté
+      const owned = user
+        ? await Promise.all(list.map(a => FOZILA.hasPurchased(a.id, 'album')))
+        : list.map(() => false);
+
+      grid.innerHTML = list.map((a, i) => `
+        <a href="album-detail.html?id=${a.id}" class="album-card">
+          <div class="album-cover" style="background:${a.grad}">
+            ${a.cover_path ? `<img src="${a.cover_path.startsWith('http') ? a.cover_path : 'https://fozila-backend.onrender.com' + a.cover_path}" style="width:100%;height:100%;object-fit:cover;">` : a.emoji}
+            ${a.tag ? `<span class="album-tag">${a.tag}</span>` : ''}
+            ${owned[i] ? `<span class="owned-badge">✓ Acheté</span>` : ''}
+            ${a.featured ? `<span class="featured-star">⭐</span>` : ''}
+          </div>
+          <div class="album-info">
+            <div class="album-title">${a.title}</div>
+            <div class="album-artist">${a.tracks} titres · ${a.genre} · ${a.year}</div>
+            <div class="album-footer">
+              <span class="album-price" style="${owned[i]?'color:var(--green);':''}">${owned[i] ? '✓ Télécharger' : FOZILA.fmt(a.price)}</span>
+              <span class="btn-buy">${owned[i] ? '⬇️' : 'Acheter'}</span>
+            </div>
+          </div>
+        </a>`).join('');
+    }
+
+    init().catch(console.error);
+  </script>
+</body>
+</html>

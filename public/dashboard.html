@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fozila — Mon espace</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="fozila.css"/>
+  <style>
+    .dash-tabs{display:flex;gap:4px;background:var(--card2);border-radius:10px;padding:4px;margin-bottom:28px;width:fit-content;}
+    .dash-tab{padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:all 0.2s;border:none;background:none;font-family:inherit;}
+    .dash-tab.active{background:var(--v);color:#fff;}
+    .dash-panel{display:none;}
+    .dash-panel.active{display:block;}
+    .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+    .stat-box{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;}
+    .stat-box .n{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--v-light);}
+    .stat-box .l{font-size:12px;color:var(--muted);margin-top:4px;}
+    .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
+    .lib-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;transition:all 0.2s;cursor:pointer;}
+    .lib-card:hover{border-color:var(--green);transform:translateY(-2px);}
+    .lib-card .cov{font-size:32px;margin-bottom:8px;}
+    .lib-card .ttl{font-size:12px;font-weight:600;margin-bottom:4px;}
+    .lib-card .prc{font-size:11px;color:var(--muted);margin-bottom:10px;}
+    @media(max-width:640px){.stat-row{grid-template-columns:repeat(2,1fr);}}
+  </style>
+</head>
+<body>
+  <div id="announce-bar"></div>
+  <nav id="main-nav"></nav>
+
+  <div class="section-wrap">
+    <!-- EN-TÊTE PROFIL -->
+    <div style="display:flex;align-items:center;gap:20px;margin-bottom:32px;" id="profile-header"></div>
+
+    <!-- STATS -->
+    <div class="stat-row" id="user-stats"></div>
+
+    <!-- ONGLETS -->
+    <div class="dash-tabs">
+      <button class="dash-tab active" onclick="switchTab('library')">🎵 Ma bibliothèque</button>
+      <button class="dash-tab" onclick="switchTab('history')">🧾 Historique</button>
+      <button class="dash-tab" onclick="switchTab('settings')">⚙️ Paramètres</button>
+    </div>
+
+    <!-- MA BIBLIOTHÈQUE -->
+    <div class="dash-panel active" id="panel-library">
+      <div class="card">
+        <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;">🎵 Ma bibliothèque</h3>
+        <div id="lib-albums"></div>
+      </div>
+    </div>
+
+    <!-- HISTORIQUE -->
+    <div class="dash-panel" id="panel-history">
+      <div class="card">
+        <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;">Historique des achats</h3>
+        <div id="history-list"></div>
+      </div>
+    </div>
+
+    <!-- PARAMÈTRES -->
+    <div class="dash-panel" id="panel-settings">
+      <div class="card">
+        <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;">Informations personnelles</h3>
+        <div class="form-group"><label>Nom</label><input type="text" id="set-name"/></div>
+        <div class="form-group"><label>Email</label><input type="email" id="set-email" style="opacity:0.6;" readonly/></div>
+        <div class="form-group"><label>Nouveau mot de passe</label><input type="password" id="set-pwd" placeholder="Laisser vide pour ne pas changer"/></div>
+        <div style="display:flex;gap:10px;margin-top:8px;">
+          <button class="btn-primary" onclick="saveSettings()">Sauvegarder</button>
+          <button class="btn-ghost" style="color:var(--red);border-color:rgba(239,68,68,0.3);" onclick="FOZILA.logout()">Se déconnecter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="fozila.js"></script>
+  <script>
+    const user = FOZILA.getUser();
+    const token = FOZILA.getToken();
+    if (!user || !token) {
+      location.href = 'auth.html?redirect=dashboard.html';
+    }
+
+    FOZILA.injectNav('dashboard');
+    FOZILA.injectAnnounce();
+
+    function switchTab(id) {
+      document.querySelectorAll('.dash-tab').forEach((t,i) => {
+        t.classList.toggle('active', ['library','history','settings'][i] === id);
+      });
+      document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + id).classList.add('active');
+    }
+
+    async function loadDashboard() {
+      // Charger les achats depuis l'API
+      const purchases = await FOZILA.getMyPurchases();
+      const albumPurchases  = purchases.filter(p => p.item_type === 'album');
+      const singlePurchases = purchases.filter(p => p.item_type === 'single');
+      const totalSpent = purchases.reduce((s, p) => s + p.amount, 0);
+      const totalTracks = albumPurchases.reduce((s, p) => s + (p.item?.tracks || 0), 0);
+
+      // PROFIL
+      document.getElementById('profile-header').innerHTML = `
+        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--v),#4c1d95);display:flex;align-items:center;justify-content:center;font-size:28px;border:3px solid var(--v-border);">👤</div>
+        <div>
+          <h1 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:3px;" id="dash-name">${user.name}</h1>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:10px;">${user.email}</p>
+          <span style="background:var(--v-dim);border:1px solid var(--v-border);color:var(--v-light);padding:3px 12px;border-radius:100px;font-size:11px;font-weight:600;">Membre Fozila</span>
+        </div>
+      `;
+
+      // STATS
+      document.getElementById('user-stats').innerHTML = `
+        <div class="stat-box"><div class="n">${albumPurchases.length}</div><div class="l">Albums achetés</div></div>
+        <div class="stat-box"><div class="n">${singlePurchases.length}</div><div class="l">Singles achetés</div></div>
+        <div class="stat-box"><div class="n">${totalTracks}</div><div class="l">Titres disponibles</div></div>
+        <div class="stat-box"><div class="n" style="font-size:16px;">${FOZILA.fmt(totalSpent)}</div><div class="l">Total dépensé</div></div>
+      `;
+
+      // BIBLIOTHÈQUE
+      const libGrid = document.getElementById('lib-albums');
+      if (!purchases.length) {
+        libGrid.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);">
+          <div style="font-size:48px;margin-bottom:12px;">🎵</div>
+          <p style="margin-bottom:16px;">Votre bibliothèque est vide.</p>
+          <a href="albums.html" class="btn-primary">Parcourir les albums</a>
+        </div>`;
+      } else {
+        libGrid.innerHTML = purchases.map(p => `
+          <div data-item-id="${p.item_id}" style="background:var(--card2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+
+            <!-- EN-TÊTE -->
+            <div style="display:flex;align-items:center;gap:14px;padding:16px 20px;background:rgba(255,255,255,0.02);">
+              <div style="width:56px;height:56px;border-radius:12px;flex-shrink:0;overflow:hidden;background:${p.item?.grad||'var(--card)'};display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,0.4);">
+                ${p.item?.cover_path ? `<img src="${p.item.cover_path}" style="width:100%;height:100%;object-fit:cover;">` : (p.item?.emoji||'🎵')}
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:15px;font-weight:700;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.item?.title||'Article'}</div>
+                <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${p.item_type==='album'?'💿 Album complet':'🎵 Single'} · Acheté · ${FOZILA.fmt(p.amount)}</div>
+                ${p.item_type === 'single' ? `
+                  <div style="display:flex;gap:6px;">
+                    <button onclick="playOnline('${p.download_token}','${p.item?.title||''}')"
+                      style="display:flex;align-items:center;gap:5px;background:var(--v);border:none;color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;">
+                      ▶ Écouter
+                    </button>
+                    <button onclick="downloadTrack('${p.download_token}',null)"
+                      style="display:flex;align-items:center;gap:5px;background:var(--green);border:none;color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;">
+                      ⬇️ Télécharger
+                    </button>
+                  </div>
+                ` : `
+                  <div style="font-size:11px;color:var(--v-light);">↓ Tous les titres ci-dessous — cliquez pour écouter ou télécharger</div>
+                `}
+              </div>
+            </div>
+
+            <!-- TITRES ALBUM — affichés automatiquement -->
+            ${p.item_type === 'album' ? `
+              <div id="tracks-${p.download_token}" style="border-top:1px solid var(--border);padding:4px 20px 12px;">
+                <div class="tracks-loading" style="color:var(--muted);font-size:13px;text-align:center;padding:12px;">⏳ Chargement des titres…</div>
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+
+        // Charger automatiquement les titres de chaque album
+        purchases.filter(p => p.item_type === 'album').forEach(p => {
+          loadAlbumTracks(p.download_token);
+        });
+      }
+
+      // HISTORIQUE
+      const histList = document.getElementById('history-list');
+      if (!purchases.length) {
+        histList.innerHTML = '<p style="color:var(--muted);font-size:14px;text-align:center;padding:30px;">Aucun achat enregistré.</p>';
+      } else {
+        histList.innerHTML = purchases.map(p => `
+          <div class="history-row">
+            <div class="history-icon" style="background:${p.item?.grad||'var(--card2)'};">${p.item?.emoji||'🎵'}</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:600;">${p.item?.title||'Article'}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">${p.item_type==='album'?'💿 Album':'🎵 Single'} · ${FOZILA.timeAgo(p.purchased_at)}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:14px;font-weight:700;color:var(--v-light);">${FOZILA.fmt(p.amount)}</div>
+              <button onclick="downloadTrack('${p.download_token}',null)" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:12px;margin-top:4px;">⬇️ Télécharger</button>
+            </div>
+          </div>`).join('');
+      }
+
+      // PARAMÈTRES
+      document.getElementById('set-name').value  = user.name;
+      document.getElementById('set-email').value = user.email;
+    }
+
+    async function saveSettings() {
+      const name = document.getElementById('set-name').value.trim();
+      const pwd  = document.getElementById('set-pwd').value;
+      if (!name) { FOZILA.toast('Le nom ne peut pas être vide', 'error'); return; }
+      try {
+        await FOZILA.api('PUT', '/auth/me', { name, password: pwd || undefined });
+        user.name = name;
+        localStorage.setItem('fozila_user', JSON.stringify(user));
+        FOZILA.toast('✓ Profil mis à jour !', 'success');
+        document.getElementById('dash-name').textContent = name;
+      } catch(err) {
+        FOZILA.toast(err.message || 'Erreur mise à jour', 'error');
+      }
+    }
+
+    // Event delegation pour les boutons single
+    document.getElementById('lib-albums').addEventListener('click', e => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const token = btn.dataset.token;
+      const title = btn.dataset.title || '';
+      if (btn.dataset.action === 'play') playOnline(token, title, null);
+      if (btn.dataset.action === 'dl')   downloadTrack(token, null);
+    });
+
+    loadDashboard().then(() => {
+      // Si redirigé après achat, ouvrir l'album automatiquement
+      const urlParams = new URLSearchParams(location.search);
+      const highlightId = urlParams.get('album') || urlParams.get('single');
+      if (highlightId) {
+        // Attendre que la DOM soit rendue puis scroller vers l'article
+        setTimeout(() => {
+          const cards = document.querySelectorAll('#lib-albums > div');
+          cards.forEach(card => {
+            if (card.dataset.itemId === highlightId) {
+              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              card.style.border = '2px solid var(--v-light)';
+              card.style.transition = 'border 0.3s';
+              setTimeout(() => card.style.border = '1px solid var(--border)', 3000);
+            }
+          });
+        }, 300);
+      }
+    }).catch(console.error);
+
+    // ── CHARGEMENT AUTO DES TITRES ──
+    async function loadAlbumTracks(token) {
+      const zone = document.getElementById('tracks-' + token);
+      if (!zone) return;
+      try {
+        const res    = await fetch('/api/download/' + token + '/tracks');
+        const tracks = await res.json();
+
+        if (!tracks.length) {
+          zone.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);"><div style="font-size:32px;margin-bottom:8px;">🎵</div><p style="font-size:13px;">Aucun titre disponible.</p></div>';
+          return;
+        }
+
+        // Construire le HTML sans backticks imbriqués
+        const header = '<div style="padding:8px 0 4px;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;">' + tracks.length + ' titre' + (tracks.length > 1 ? 's' : '') + '</div>';
+
+        const rows = tracks.map(t => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);';
+
+          const num = document.createElement('span');
+          num.style.cssText = 'font-size:12px;color:var(--muted);width:24px;text-align:center;flex-shrink:0;font-weight:600;';
+          num.textContent = t.track_num;
+
+          const title = document.createElement('span');
+          title.style.cssText = 'flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+          title.textContent = t.title;
+
+          const btns = document.createElement('div');
+          btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+
+          const btnPlay = document.createElement('button');
+          btnPlay.style.cssText = 'background:var(--v);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:500;';
+          btnPlay.textContent = '▶ Écouter';
+          btnPlay.addEventListener('click', () => playOnline(token, t.title, t.id));
+
+          const btnDl = document.createElement('button');
+          btnDl.style.cssText = 'background:var(--green);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:500;';
+          btnDl.textContent = '⬇️ Télécharger';
+          btnDl.addEventListener('click', () => downloadTrack(token, t.id));
+
+          btns.appendChild(btnPlay);
+          btns.appendChild(btnDl);
+          row.appendChild(num);
+          row.appendChild(title);
+          row.appendChild(btns);
+          return row;
+        });
+
+        zone.innerHTML = header;
+        rows.forEach(r => zone.appendChild(r));
+
+      } catch(e) {
+        zone.innerHTML = '<p style="color:var(--red);font-size:13px;padding:12px 0;">Erreur chargement des titres.</p>';
+      }
+    }
+
+    // ── LECTEUR EN LIGNE ──
+    let _onlinePlayer = null;
+
+    function playOnline(token, title, trackId) {
+      if (_onlinePlayer) { _onlinePlayer.pause(); _onlinePlayer = null; }
+
+      // Construction URL — pas de stream=1, on laisse le backend gérer
+      // ?dl=0 = streaming (pas de téléchargement forcé)
+      const src = trackId
+        ? '/api/download/' + token + '/track/' + trackId + '?dl=0'
+        : '/api/download/' + token + '?dl=0';
+
+      // Créer ou réutiliser le lecteur flottant
+      let el = document.getElementById('online-player');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'online-player';
+        el.style.cssText = [
+          'position:fixed', 'bottom:24px', 'left:50%', 'transform:translateX(-50%)',
+          'z-index:9999', 'background:#111', 'border:1px solid #7C3AED',
+          'border-radius:16px', 'padding:16px 20px', 'min-width:320px', 'max-width:500px',
+          'box-shadow:0 8px 40px rgba(0,0,0,0.8)', 'width:90%'
+        ].join(';');
+        document.body.appendChild(el);
+      }
+
+      el.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#7C3AED,#4c1d95);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🎵</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:#f0f0f0;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${title}</div>
+            <audio id="online-audio" controls preload="auto"
+              style="width:100%;height:36px;border-radius:8px;outline:none;"
+              src="${src}">
+            </audio>
+          </div>
+          <button onclick="closePlayer()"
+            style="background:rgba(255,255,255,0.1);border:none;color:#fff;cursor:pointer;font-size:14px;width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+      `;
+
+      const audio = document.getElementById('online-audio');
+      // Tentative de lecture automatique
+      audio.play().catch(() => {
+        // Lecture auto bloquée par le navigateur — le client peut cliquer play manuellement
+        FOZILA.toast('Cliquez ▶ dans le lecteur pour démarrer', 'info');
+      });
+      _onlinePlayer = audio;
+    }
+
+    function closePlayer() {
+      if (_onlinePlayer) { _onlinePlayer.pause(); _onlinePlayer = null; }
+      const el = document.getElementById('online-player');
+      if (el) el.remove();
+    }
+
+    function downloadTrack(token, trackId) {
+      // Créer un lien temporaire pour télécharger sans ouvrir de page blanche
+      const url  = trackId
+        ? '/api/download/' + token + '/track/' + trackId
+        : '/api/download/' + token;
+      const link = document.createElement('a');
+      link.href     = url;
+      link.download = '';
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>

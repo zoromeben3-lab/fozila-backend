@@ -1,0 +1,43 @@
+{
+  "name": "Fozila — Votre musique en ligne",
+  "short_name": "Fozila",
+  "description": "Achetez et téléchargez de la musique africaine",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#7C3AED",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "entertainment"],
+  "lang": "fr",
+  "shortcuts": [
+    {
+      "name": "Albums",
+      "url": "/albums.html",
+      "description": "Voir tous les albums"
+    },
+    {
+      "name": "Singles",
+      "url": "/singles.html",
+      "description": "Voir tous les singles"
+    },
+    {
+      "name": "Mon espace",
+      "url": "/dashboard.html",
+      "description": "Ma bibliothèque"
+    }
+  ]
+}

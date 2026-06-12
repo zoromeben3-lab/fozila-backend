@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fozila — Album</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="fozila.css"/>
+  <style>
+    .detail-grid { display:grid;grid-template-columns:320px 1fr;gap:48px;align-items:start; }
+    .cover-block { position:sticky;top:110px; }
+    .album-cover-big { border-radius:20px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:90px;box-shadow:0 32px 64px rgba(0,0,0,0.5);overflow:hidden; }
+    .album-cover-big img { width:100%;height:100%;object-fit:cover; }
+    .price-block { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-top:20px; }
+    .price-big { font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--v-light);margin-bottom:14px; }
+    .meta-tags { display:flex;gap:8px;flex-wrap:wrap;margin:14px 0; }
+    .tag-pill { background:var(--card2);border:1px solid var(--border);color:var(--muted);padding:4px 12px;border-radius:100px;font-size:12px; }
+
+    /* TRACKS */
+    .tracks-list { margin-top:32px; }
+    .tracks-list h3 { font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px; }
+    .track { display:flex;align-items:center;gap:14px;padding:11px 14px;border-radius:10px;transition:background 0.2s;cursor:pointer; }
+    .track:hover { background:var(--card2); }
+    .track.playing { background:var(--v-dim);border:1px solid var(--v-border); }
+    .track-num { color:var(--muted);font-size:12px;width:20px;text-align:right;flex-shrink:0; }
+    .track-play { width:28px;height:28px;border-radius:50%;background:var(--v);border:none;color:#fff;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;display:none; }
+    .track:hover .track-play { display:flex; }
+    .track:hover .track-num { display:none; }
+    .track.playing .track-play { display:flex; }
+    .track.playing .track-num { display:none; }
+    .track-name { flex:1;font-size:13px;font-weight:500; }
+    .track-lock { font-size:13px;color:var(--muted);opacity:0.5; }
+    .track-dur { color:var(--muted);font-size:12px;margin-left:auto; }
+
+    /* MINI PLAYER GLOBAL */
+    .mini-player {
+      position:fixed;bottom:0;left:0;right:0;z-index:200;
+      background:rgba(10,10,15,0.97);backdrop-filter:blur(20px);
+      border-top:1px solid var(--border);
+      padding:12px 6%;display:flex;align-items:center;gap:20px;
+      transform:translateY(100%);transition:transform 0.3s;
+    }
+    .mini-player.visible { transform:translateY(0); }
+    .mp-cover { width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0; }
+    .mp-info { flex:0 0 180px; }
+    .mp-title { font-size:13px;font-weight:600;margin-bottom:2px; }
+    .mp-album { font-size:11px;color:var(--muted); }
+    .mp-controls { display:flex;align-items:center;gap:14px; }
+    .mp-btn { background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;transition:color 0.2s; }
+    .mp-btn:hover { color:var(--text); }
+    .mp-play { width:38px;height:38px;border-radius:50%;background:var(--v);border:none;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all 0.2s; }
+    .mp-play:hover { background:#6D28D9;transform:scale(1.05); }
+    .mp-progress-wrap { flex:1;display:flex;align-items:center;gap:10px; }
+    .mp-time { font-size:11px;color:var(--muted);min-width:32px; }
+    .mp-bar { flex:1;height:4px;background:var(--border);border-radius:100px;cursor:pointer;position:relative; }
+    .mp-fill { height:100%;background:var(--v-light);border-radius:100px;width:0%;transition:width 0.1s; }
+    .mp-close { background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px; }
+
+    /* PAY METHODS */
+    .pay-methods { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px; }
+    .pay-method { background:var(--card2);border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;text-align:center;transition:all 0.2s;font-size:12px; }
+    .pay-method:hover,.pay-method.selected { border-color:var(--v);background:var(--v-dim); }
+    .pay-method .ico { font-size:22px;margin-bottom:4px; }
+
+    @media(max-width:768px){ .detail-grid{grid-template-columns:1fr;} .cover-block{position:static;} .album-cover-big{max-width:220px;margin:0 auto;} .mp-info{display:none;} }
+  </style>
+</head>
+<body>
+  <div id="announce-bar"></div>
+  <nav id="main-nav"></nav>
+
+  <div class="section-wrap">
+    <a href="albums.html" style="color:var(--muted);text-decoration:none;font-size:13px;display:inline-flex;align-items:center;gap:6px;margin-bottom:28px;transition:color 0.2s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">← Retour aux albums</a>
+    <div class="detail-grid" id="detail-content">
+      <div style="text-align:center;color:var(--muted);padding:60px;grid-column:1/-1;">Chargement…</div>
+    </div>
+  </div>
+
+  <!-- MINI PLAYER -->
+  <div class="mini-player" id="mini-player">
+    <div class="mp-cover" id="mp-cover">🎵</div>
+    <div class="mp-info">
+      <div class="mp-title" id="mp-title">—</div>
+      <div class="mp-album" id="mp-album">Extrait 30 secondes</div>
+    </div>
+    <div class="mp-controls">
+      <button class="mp-btn" onclick="prevTrack()">⏮</button>
+      <button class="mp-play" id="mp-play-btn" onclick="togglePlay()">⏸</button>
+      <button class="mp-btn" onclick="nextTrack()">⏭</button>
+    </div>
+    <div class="mp-progress-wrap">
+      <span class="mp-time" id="mp-cur">0:00</span>
+      <div class="mp-bar" id="mp-bar" onclick="seekTo(event)"><div class="mp-fill" id="mp-fill"></div></div>
+      <span class="mp-time" id="mp-dur">0:30</span>
+    </div>
+    <button class="mp-close" onclick="stopPlayer()">✕</button>
+  </div>
+
+  <!-- MODAL PAIEMENT -->
+  <div class="modal-overlay hidden" id="pay-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="document.getElementById('pay-modal').classList.add('hidden')">✕</button>
+      <h3 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px;">💳 Paiement</h3>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:22px;" id="pay-album-name"></p>
+      <div class="pay-methods">
+        <div class="pay-method selected" onclick="selectPay(this)"><div class="ico">🟠</div>Orange Money</div>
+        <div class="pay-method" onclick="selectPay(this)"><div class="ico">🔵</div>Moov Money</div>
+        <div class="pay-method" onclick="selectPay(this)"><div class="ico">💙</div>Wave</div>
+        <div class="pay-method" onclick="selectPay(this)"><div class="ico">💳</div>Carte bancaire</div>
+      </div>
+      <div class="form-group"><label>Numéro / Référence</label><input type="text" id="pay-number" placeholder="ex: 07 00 00 00 00"/></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--border);margin-top:8px;">
+        <span style="color:var(--muted);font-size:13px;">Total à payer :</span>
+        <span style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--v-light);" id="pay-price"></span>
+      </div>
+      <button class="btn-primary" style="width:100%;padding:13px;font-size:15px;margin-top:4px;" onclick="confirmPayment()">Confirmer le paiement</button>
+    </div>
+  </div>
+
+  <script src="fozila.js"></script>
+  <script>
+    FOZILA.injectNav('albums');
+    FOZILA.injectAnnounce();
+
+    const params = new URLSearchParams(location.search);
+    const id     = parseInt(params.get('id'));
+    let album    = null;
+
+    // ── AUDIO ENGINE — Vrai fichier MP3 ──
+    let _audio = null;
+    let isPlaying = false, currentTrackIdx = 0, tracks = [];
+    let animId = null;
+    const PREVIEW_DUR = 30; // secondes d'extrait par titre
+
+    function playTrack(idx) {
+      stopPlayer();
+      if (!tracks[idx]) return;
+      currentTrackIdx = idx;
+
+      if (!album.file_path) {
+        FOZILA.toast('Aucun fichier audio disponible pour cet album', 'info');
+        return;
+      }
+
+      // Utiliser le fichier spécifique du titre si disponible, sinon le fichier principal
+      const trackPath = tracks[idx]?.file_path || album.file_path;
+      if (!trackPath) { FOZILA.toast('Aucun fichier audio disponible', 'info'); return; }
+      const audioUrl = trackPath.startsWith('http') ? trackPath : window.location.origin + trackPath;
+      _audio = new Audio(audioUrl);
+      _audio.volume = 0.85;
+      // Si c'est le fichier principal de l'album, décaler de 30s par titre
+      if (trackPath === album.file_path) {
+        _audio.currentTime = idx * PREVIEW_DUR;
+      }
+      // Afficher la vraie durée
+      _audio.addEventListener('loadedmetadata', () => {
+        const totalSec = Math.floor(_audio.duration);
+        const mm = Math.floor(totalSec / 60);
+        const ss = String(totalSec % 60).padStart(2, '0');
+        document.getElementById('mp-dur').textContent = `${mm}:${ss}`;
+      });
+
+      _audio.play().catch(e => { console.error(e); FOZILA.toast('Lecture impossible : ' + e.message, 'error'); });
+      isPlaying = true;
+
+      // UI mini player
+      const coverEl = document.getElementById('mp-cover');
+      coverEl.style.background = album.cover_path ? 'none' : album.grad;
+      coverEl.innerHTML = album.cover_path
+        ? `<img src="${album.cover_path}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`
+        : album.emoji;
+      document.getElementById('mp-title').textContent   = tracks[idx].name;
+      document.getElementById('mp-album').textContent   = album.title + ' · Extrait 30s';
+      document.getElementById('mp-play-btn').textContent = '⏸';
+      document.getElementById('mini-player').classList.add('visible');
+      document.body.style.paddingBottom = '80px';
+      document.querySelectorAll('.track').forEach((el,i) => el.classList.toggle('playing', i === idx));
+
+      // Barre de progression
+      const startTime = Date.now();
+      cancelAnimationFrame(animId);
+      function tick() {
+        if (!_audio || !isPlaying) return;
+        const elapsed = Math.min((Date.now() - startTime) / 1000, PREVIEW_DUR);
+        document.getElementById('mp-fill').style.width = (elapsed / PREVIEW_DUR * 100) + '%';
+        const s = Math.floor(elapsed);
+        document.getElementById('mp-cur').textContent = Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+        if (elapsed >= PREVIEW_DUR) { nextTrack(); return; }
+        animId = requestAnimationFrame(tick);
+      }
+      tick();
+
+      clearTimeout(window._previewTimeout);
+      window._previewTimeout = setTimeout(() => nextTrack(), PREVIEW_DUR * 1000);
+      _audio.addEventListener('ended', () => stopPlayer());
+    }
+
+    function togglePlay() {
+      if (!_audio) return;
+      const btn = document.getElementById('mp-play-btn');
+      if (_audio.paused) {
+        _audio.play(); btn.textContent = '⏸'; isPlaying = true;
+      } else {
+        _audio.pause(); btn.textContent = '▶'; isPlaying = false;
+      }
+    }
+
+    function stopPlayer() {
+      if (_audio) { _audio.pause(); _audio = null; }
+      cancelAnimationFrame(animId);
+      clearTimeout(window._previewTimeout);
+      isPlaying = false;
+      document.getElementById('mini-player').classList.remove('visible');
+      document.body.style.paddingBottom = '';
+      document.querySelectorAll('.track').forEach(el => el.classList.remove('playing'));
+      document.getElementById('mp-fill').style.width = '0%';
+    }
+
+    function nextTrack() { stopPlayer(); if (currentTrackIdx < tracks.length - 1) setTimeout(() => playTrack(currentTrackIdx + 1), 300); }
+    function prevTrack() { stopPlayer(); if (currentTrackIdx > 0) setTimeout(() => playTrack(currentTrackIdx - 1), 300); }
+
+    function seekTo(e) {
+      if (!_audio) return;
+      const bar = document.getElementById('mp-bar');
+      const pct = e.offsetX / bar.offsetWidth;
+      _audio.currentTime = (currentTrackIdx * PREVIEW_DUR) + (pct * PREVIEW_DUR);
+    }
+
+    function selectPay(el) {
+      document.querySelectorAll('.pay-method').forEach(m => m.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    // ── RENDU PAGE ──
+    async function loadAlbum() {
+      const user = FOZILA.getUser();
+      try {
+        album = await FOZILA.getAlbum(id);
+      } catch {
+        document.getElementById('detail-content').innerHTML = '<p style="color:var(--muted);grid-column:1/-1;">Album introuvable. <a href="albums.html">Retour</a></p>';
+        return;
+      }
+      document.title = 'Fozila — ' + album.title;
+      const owned = user ? await FOZILA.hasPurchased(album.id, 'album') : false;
+
+      // Charger les vrais titres depuis la DB
+      let apiTracks = [];
+      try {
+        const tracksRes = await fetch('/api/albums/' + album.id + '/tracks');
+        apiTracks = await tracksRes.json();
+      } catch(e) {}
+
+      if (apiTracks.length > 0) {
+        // Vrais titres uploadés
+        tracks = apiTracks.map(t => ({
+          name:      t.title,
+          dur:       t.duration || '—',
+          file_path: t.file_path
+        }));
+      } else {
+        // Pas encore de fichiers — afficher des placeholders
+        tracks = Array.from({length: album.tracks}, (_,i) => ({
+          name:      `Titre ${i+1}`,
+          dur:       '—',
+          file_path: album.file_path || ''
+        }));
+      }
+
+      document.getElementById('detail-content').innerHTML = `
+        <div class="cover-block">
+          <div class="album-cover-big" style="background:${album.cover_path ? 'none' : album.grad}">
+            ${album.cover_path ? `<img src="${album.cover_path}" alt="${album.title}">` : album.emoji}
+          </div>
+          <div class="price-block">
+            ${owned ? `
+              <div style="color:var(--green);font-size:13px;font-weight:700;margin-bottom:10px;">✓ Album acheté — accès complet</div>
+              <button class="btn-green" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" onclick="FOZILA.toast('⬇️ Téléchargement de l\\'album complet…','success')">⬇️ Télécharger l'album complet</button>
+            ` : `
+              <div class="price-big">${FOZILA.fmt(album.price)}</div>
+              <button class="btn-primary" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" onclick="openPayModal()">🛒 Acheter cet album</button>
+            `}
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn-outline" style="flex:1;padding:9px;font-size:12px;border-radius:8px;" onclick="playTrack(0)">▶ Écouter les extraits</button>
+              <button class="btn-outline" style="padding:9px 12px;font-size:12px;border-radius:8px;" title="Partager" onclick="navigator.clipboard?.writeText(location.href);FOZILA.toast('Lien copié !','success')">🔗</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p style="color:var(--muted);font-size:12px;margin-bottom:8px;">${album.artist}</p>
+          <h1 style="font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,48px);font-weight:800;letter-spacing:-1.5px;margin-bottom:10px;">${album.title}</h1>
+          <div class="meta-tags">
+            <span class="tag-pill">🎵 ${album.tracks} titres</span>
+            <span class="tag-pill">🎧 ${album.genre}</span>
+            <span class="tag-pill">📅 ${album.year}</span>
+            <span class="tag-pill">🔥 ${album.sales || 0} ventes</span>
+          </div>
+          <p style="color:var(--muted);font-size:14px;line-height:1.75;max-width:520px;">
+            ${album.description || 'Un album qui traverse les frontières musicales, mêlant traditions africaines et sonorités contemporaines. Chaque titre est une invitation au voyage intérieur.'}
+          </p>
+
+          <div class="tracks-list">
+            <h3>🎶 Liste des titres <span style="font-size:13px;color:var(--muted);font-weight:400;">${owned ? '' : '— Cliquez ▶ pour un extrait 30s'}</span></h3>
+            ${tracks.map((t,i) => `
+              <div class="track" onclick="playTrack(${i})">
+                <span class="track-num">${i+1}</span>
+                <button class="track-play">▶</button>
+                <span class="track-name">${t.name}</span>
+                ${owned
+                  ? `<button onclick="event.stopPropagation();downloadAlbum()" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:12px;padding:4px 8px;">⬇️</button>`
+                  : `<span class="track-lock">${t.file_path ? '▶' : '🔒'}</span>`
+                }
+                <span class="track-dur" id="track-dur-${i}">${t.dur}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+
+    function openPayModal() {
+      if (!FOZILA.getUser()) { FOZILA.toast('Connectez-vous pour acheter', 'error'); setTimeout(()=>location.href='auth.html?redirect='+encodeURIComponent(location.href),1400); return; }
+      document.getElementById('pay-album-name').textContent = album.title;
+      document.getElementById('pay-price').textContent = FOZILA.fmt(album.price);
+      document.getElementById('pay-modal').classList.remove('hidden');
+    }
+
+    async function confirmPayment() {
+      const num    = document.getElementById('pay-number').value.trim();
+      const method = document.querySelector('.pay-method.selected')?.textContent?.trim().toLowerCase().replace(' ','_') || 'orange_money';
+      if (!num) { FOZILA.toast('Entrez votre numéro de paiement', 'error'); return; }
+      document.getElementById('pay-modal').classList.add('hidden');
+      FOZILA.toast('⏳ Paiement en cours de traitement…', 'info');
+      try {
+        await FOZILA.purchase(album.id, 'album', method, num);
+        FOZILA.toast('✅ Paiement validé ! Album disponible.', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } catch(err) {
+        FOZILA.toast(err.message || 'Erreur de paiement', 'error');
+      }
+    }
+
+    // Bouton télécharger pour album acheté
+    async function downloadAlbum() {
+      const token = await FOZILA.getDownloadToken(album.id, 'album');
+      FOZILA.download(token);
+    }
+
+    loadAlbum().catch(console.error);
+  </script>
+</body>
+</html>
