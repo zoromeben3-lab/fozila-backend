@@ -1,98 +1,56 @@
 const router = require('express').Router();
 const db     = require('../config/db');
-const path   = require('path');
-const fs     = require('fs');
+const https  = require('https');
+const http   = require('http');
 
-// ── Vérifier le token ──
+// Vérifier le token
 function verifyToken(token) {
   if (!token || token.length < 10) return null;
-  return db.get(
-    `SELECT * FROM purchases WHERE download_token=? AND status='completed'`,
-    [token]
-  );
+  return db.get(`SELECT * FROM purchases WHERE download_token=? AND status='completed'`, [token]);
 }
 
-// ── Envoyer un fichier audio ──
-function sendAudio(req, res, filePath, fileName) {
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'Fichier audio introuvable sur le serveur.' });
-  }
-
-  const stat     = fs.statSync(filePath);
-  const ext      = path.extname(filePath).toLowerCase();
-  const mime     = ext === '.wav' ? 'audio/wav' : 'audio/mpeg';
-  const isStream = req.query.dl === '0'; // ?dl=0 = streaming, sinon téléchargement
-
-  if (!isStream) {
-    // ── TÉLÉCHARGEMENT ──
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
-    res.setHeader('Content-Type', mime);
-    res.setHeader('Content-Length', stat.size);
-    fs.createReadStream(filePath).pipe(res);
-    return;
-  }
-
-  // ── STREAMING avec support Range ──
-  res.setHeader('Accept-Ranges', 'bytes');
-  res.setHeader('Content-Type', mime);
-
-  const range = req.headers.range;
-  if (range) {
-    const parts  = range.replace(/bytes=/, '').split('-');
-    const start  = parseInt(parts[0], 10);
-    const end    = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
-    const chunk  = end - start + 1;
-
-    res.writeHead(206, {
-      'Content-Range':  `bytes ${start}-${end}/${stat.size}`,
-      'Accept-Ranges':  'bytes',
-      'Content-Length': chunk,
-      'Content-Type':   mime,
-    });
-    fs.createReadStream(filePath, { start, end }).pipe(res);
-  } else {
-    res.writeHead(200, {
-      'Content-Length': stat.size,
-      'Content-Type':   mime,
-      'Accept-Ranges':  'bytes',
-    });
-    fs.createReadStream(filePath).pipe(res);
-  }
+// Streamer une URL Cloudinary vers le client
+function streamFromUrl(url, res, fileName, isDownload) {
+  const proto = url.startsWith('https') ? https : http;
+  proto.get(url, (cloudRes) => {
+    const contentType = cloudRes.headers['content-type'] || 'audio/mpeg';
+    if (isDownload) {
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+    }
+    res.setHeader('Content-Type', contentType);
+    if (cloudRes.headers['content-length']) {
+      res.setHeader('Content-Length', cloudRes.headers['content-length']);
+    }
+    cloudRes.pipe(res);
+  }).on('error', (e) => {
+    if (!res.headersSent) res.status(500).json({ error: 'Erreur streaming: ' + e.message });
+  });
 }
 
-// ── Nom de fichier sécurisé ──
 function safeName(title) {
-  return title.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim().replace(/\s+/g, '_') || 'Fozila';
+  return (title || 'Fozila').replace(/[^a-zA-Z0-9\s\-_]/g, '').trim().replace(/\s+/g, '_');
 }
 
-// ────────────────────────────────────────────
-// GET /api/download/:token — single ou album
-// ────────────────────────────────────────────
+// GET /api/download/:token
 router.get('/:token', (req, res) => {
   const purchase = verifyToken(req.params.token);
-  if (!purchase) return res.status(403).json({ error: 'Token invalide ou achat introuvable.' });
+  if (!purchase) return res.status(403).json({ error: 'Token invalide.' });
 
   const table = purchase.item_type === 'album' ? 'albums' : 'singles';
   const item  = db.get(`SELECT title, file_path FROM ${table} WHERE id=?`, [purchase.item_id]);
-
   if (!item || !item.file_path)
-    return res.status(404).json({ error: 'Fichier non encore disponible. Contactez le support.' });
+    return res.status(404).json({ error: 'Fichier non encore disponible.' });
 
-  const filePath = path.join(__dirname, '..', item.file_path);
-  const ext      = path.extname(filePath);
-  const fileName = `Fozila_${safeName(item.title)}${ext}`;
-
-  sendAudio(req, res, filePath, fileName);
+  const isStream   = req.query.dl === '0';
+  const fileName   = `Fozila_${safeName(item.title)}.mp3`;
+  streamFromUrl(item.file_path, res, fileName, !isStream);
 });
 
-// ────────────────────────────────────────────
-// GET /api/download/:token/tracks — liste des titres
-// ────────────────────────────────────────────
+// GET /api/download/:token/tracks
 router.get('/:token/tracks', (req, res) => {
   const purchase = verifyToken(req.params.token);
   if (!purchase) return res.status(403).json({ error: 'Token invalide.' });
   if (purchase.item_type !== 'album') return res.status(400).json({ error: 'Pas un album.' });
-
   const tracks = db.all(
     'SELECT id, title, track_num, file_path FROM tracks WHERE album_id=? ORDER BY track_num ASC',
     [purchase.item_id]
@@ -100,28 +58,21 @@ router.get('/:token/tracks', (req, res) => {
   res.json(tracks);
 });
 
-// ────────────────────────────────────────────
-// GET /api/download/:token/track/:trackId — titre spécifique
-// ────────────────────────────────────────────
+// GET /api/download/:token/track/:trackId
 router.get('/:token/track/:trackId', (req, res) => {
   const purchase = verifyToken(req.params.token);
   if (!purchase) return res.status(403).json({ error: 'Token invalide.' });
-  if (purchase.item_type !== 'album')
-    return res.status(400).json({ error: 'Ce token est pour un single.' });
 
   const track = db.get(
     'SELECT * FROM tracks WHERE id=? AND album_id=?',
     [req.params.trackId, purchase.item_id]
   );
+  if (!track || !track.file_path) return res.status(404).json({ error: 'Track introuvable.' });
 
-  if (!track || !track.file_path)
-    return res.status(404).json({ error: 'Track introuvable ou sans fichier audio.' });
-
-  const filePath = path.join(__dirname, '..', track.file_path);
+  const isStream = req.query.dl === '0';
   const num      = String(track.track_num).padStart(2, '0');
-  const fileName = `${num}_${safeName(track.title)}${path.extname(filePath)}`;
-
-  sendAudio(req, res, filePath, fileName);
+  const fileName = `${num}_${safeName(track.title)}.mp3`;
+  streamFromUrl(track.file_path, res, fileName, !isStream);
 });
 
 module.exports = router;

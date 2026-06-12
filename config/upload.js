@@ -1,68 +1,77 @@
 // ══════════════════════════════════════════════════
-//  FOZILA — Configuration upload fichiers (Multer v2)
+//  FOZILA — Upload via Cloudinary
+//  Images + Audio stockés dans le cloud
 // ══════════════════════════════════════════════════
 
-const multer = require('multer');
-const path   = require('path');
-const fs     = require('fs');
+const cloudinary   = require('cloudinary').v2;
+const multer       = require('multer');
+const path         = require('path');
+const fs           = require('fs');
 
-// Créer les dossiers si absents
-['./uploads/music', './uploads/covers'].forEach(dir => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+// Configuration Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// ── Stockage fichiers audio ──
-const audioStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, './uploads/music'),
-  filename:    (req, file, cb) => {
-    const ext  = path.extname(file.originalname);
-    const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-    cb(null, name);
-  }
-});
+// Stockage temporaire en mémoire (pas sur disque)
+const storage = multer.memoryStorage();
 
-// ── Stockage covers ──
-const coverStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, './uploads/covers'),
-  filename:    (req, file, cb) => {
-    const ext  = path.extname(file.originalname);
-    const name = `cover-${Date.now()}${ext}`;
-    cb(null, name);
-  }
-});
-
-// ── Filtres MIME ──
-const audioFilter = (req, file, cb) => {
-  // Accepter MP3, WAV, et aussi application/octet-stream (certains navigateurs Windows)
-  const allowedMime = ['audio/mpeg','audio/mp3','audio/wav','audio/wave','audio/x-wav','application/octet-stream'];
-  const allowedExt  = /\.(mp3|wav|MP3|WAV)$/;
-  if (allowedMime.includes(file.mimetype) || allowedExt.test(file.originalname)) {
-    cb(null, true);
-  } else {
-    console.log('Fichier rejeté:', file.mimetype, file.originalname);
-    cb(new Error(`Format non supporté: ${file.mimetype}. Utilisez MP3 ou WAV.`));
-  }
-};
-
+// Filtre images
 const imageFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/') || file.originalname.match(/\.(jpg|jpeg|png|webp)$/i)) {
     cb(null, true);
   } else {
-    cb(new Error('Format image non supporté. Utilisez JPG, PNG ou WebP.'));
+    cb(new Error('Format image non supporté.'));
   }
 };
 
-// ── Exportation ──
-const uploadAudio = multer({
-  storage:    audioStorage,
-  fileFilter: audioFilter,
-  limits:     { fileSize: 104857600 } // 100 Mo
-});
+// Filtre audio
+const audioFilter = (req, file, cb) => {
+  const allowed = ['audio/mpeg','audio/mp3','audio/wav','audio/wave','audio/x-wav','application/octet-stream'];
+  if (allowed.includes(file.mimetype) || file.originalname.match(/\.(mp3|wav)$/i)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Format audio non supporté.'));
+  }
+};
 
-const uploadCover = multer({
-  storage:    coverStorage,
-  fileFilter: imageFilter,
-  limits:     { fileSize: 5242880 } // 5 Mo
-});
+// Uploader une image vers Cloudinary
+async function uploadImageToCloud(buffer, folder = 'fozila/covers') {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: 'image' },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
+}
 
-module.exports = { uploadAudio, uploadCover };
+// Uploader un audio vers Cloudinary
+async function uploadAudioToCloud(buffer, filename, folder = 'fozila/music') {
+  return new Promise((resolve, reject) => {
+    const publicId = folder + '/' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    const stream = cloudinary.uploader.upload_stream(
+      { 
+        folder,
+        resource_type: 'video', // Cloudinary utilise 'video' pour l'audio
+        public_id: publicId,
+        format: 'mp3'
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
+}
+
+const uploadCover = multer({ storage, fileFilter: imageFilter, limits: { fileSize: 5242880 } });
+const uploadAudio = multer({ storage, fileFilter: audioFilter, limits: { fileSize: 104857600 } });
+
+module.exports = { uploadCover, uploadAudio, uploadImageToCloud, uploadAudioToCloud };

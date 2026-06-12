@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const db     = require('../config/db');
 const { requireAdmin } = require('../middleware/auth');
-const { uploadCover, uploadAudio } = require('../config/upload');
+const { uploadCover, uploadAudio, uploadImageToCloud, uploadAudioToCloud } = require('../config/upload');
 
 // GET /api/singles
 router.get('/', (req, res) => {
@@ -24,11 +24,16 @@ router.get('/:id', (req, res) => {
 
 // POST /api/singles (admin)
 router.post('/', requireAdmin, (req, res) => {
-  uploadCover.single('cover')(req, res, (err) => {
+  uploadCover.single('cover')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
     const { title, artist, genre, price, duration, emoji, grad, featured, live } = req.body;
     if (!title || !genre || !price) return res.status(400).json({ error: 'Titre, genre et prix requis.' });
-    const cover_path = req.file ? `/uploads/covers/${req.file.filename}` : '';
+
+    let cover_path = '';
+    try {
+      if (req.file) cover_path = await uploadImageToCloud(req.file.buffer);
+    } catch(e) { console.error('Erreur cover:', e.message); }
+
     db.run(
       `INSERT INTO singles (title,artist,genre,price,duration,emoji,grad,featured,live,cover_path) VALUES (?,?,?,?,?,?,?,?,?,?)`,
       [title.trim(), artist?.trim()||'Artiste Fozila', genre.trim(), parseInt(price),
@@ -41,12 +46,18 @@ router.post('/', requireAdmin, (req, res) => {
 
 // PUT /api/singles/:id (admin)
 router.put('/:id', requireAdmin, (req, res) => {
-  uploadCover.single('cover')(req, res, (err) => {
+  uploadCover.single('cover')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
     const single = db.get('SELECT * FROM singles WHERE id = ?', [req.params.id]);
     if (!single) return res.status(404).json({ error: 'Single introuvable.' });
+
     const { title, artist, genre, price, duration, emoji, grad, featured, live, is_active } = req.body;
-    const cover_path = req.file ? `/uploads/covers/${req.file.filename}` : single.cover_path;
+    
+    let cover_path = single.cover_path;
+    try {
+      if (req.file) cover_path = await uploadImageToCloud(req.file.buffer);
+    } catch(e) { console.error('Erreur cover:', e.message); }
+
     db.run(
       `UPDATE singles SET title=?,artist=?,genre=?,price=?,duration=?,emoji=?,grad=?,featured=?,live=?,cover_path=?,is_active=? WHERE id=?`,
       [title?.trim()||single.title, artist?.trim()||single.artist, genre?.trim()||single.genre,
@@ -60,14 +71,19 @@ router.put('/:id', requireAdmin, (req, res) => {
 
 // PUT /api/singles/:id/audio (admin)
 router.put('/:id/audio', requireAdmin, (req, res) => {
-  uploadAudio.single('audio')(req, res, (err) => {
+  uploadAudio.single('audio')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
     const single = db.get('SELECT * FROM singles WHERE id = ?', [req.params.id]);
     if (!single) return res.status(404).json({ error: 'Single introuvable.' });
     if (!req.file) return res.status(400).json({ error: 'Aucun fichier audio reçu.' });
-    const file_path = `/uploads/music/${req.file.filename}`;
-    db.run('UPDATE singles SET file_path = ? WHERE id = ?', [file_path, single.id]);
-    res.json({ message: 'Fichier audio uploadé.', file_path });
+
+    try {
+      const cloudUrl = await uploadAudioToCloud(req.file.buffer, req.file.originalname);
+      db.run('UPDATE singles SET file_path = ? WHERE id = ?', [cloudUrl, single.id]);
+      res.json({ message: 'Fichier audio uploadé.', file_path: cloudUrl });
+    } catch(e) {
+      res.status(500).json({ error: 'Erreur upload Cloudinary: ' + e.message });
+    }
   });
 });
 

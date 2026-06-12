@@ -1,8 +1,7 @@
 const router = require('express').Router();
 const db     = require('../config/db');
-const path   = require('path');
 const { requireAdmin } = require('../middleware/auth');
-const { uploadAudio, uploadCover } = require('../config/upload');
+const { uploadCover, uploadAudio, uploadImageToCloud, uploadAudioToCloud } = require('../config/upload');
 
 // GET /api/albums
 router.get('/', (req, res) => {
@@ -32,16 +31,20 @@ router.get('/:id/tracks', (req, res) => {
   res.json(tracks);
 });
 
-// POST /api/albums (admin) — créer un album avec cover optionnelle
+// POST /api/albums (admin)
 router.post('/', requireAdmin, (req, res) => {
-  uploadCover.single('cover')(req, res, (err) => {
+  uploadCover.single('cover')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
-
     const { title, artist, genre, tracks, year, price, emoji, grad, tag, featured, description } = req.body;
     if (!title || !genre || !price || !year)
       return res.status(400).json({ error: 'Titre, genre, prix et année requis.' });
 
-    const cover_path = req.file ? `/uploads/covers/${req.file.filename}` : '';
+    let cover_path = '';
+    try {
+      if (req.file) {
+        cover_path = await uploadImageToCloud(req.file.buffer);
+      }
+    } catch(e) { console.error('Erreur upload cover:', e.message); }
 
     db.run(
       `INSERT INTO albums (title,artist,genre,tracks,year,price,emoji,grad,tag,featured,description,cover_path)
@@ -56,16 +59,21 @@ router.post('/', requireAdmin, (req, res) => {
   });
 });
 
-// PUT /api/albums/:id (admin) — modifier un album
+// PUT /api/albums/:id (admin)
 router.put('/:id', requireAdmin, (req, res) => {
-  uploadCover.single('cover')(req, res, (err) => {
+  uploadCover.single('cover')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
-
     const album = db.get('SELECT * FROM albums WHERE id = ?', [req.params.id]);
     if (!album) return res.status(404).json({ error: 'Album introuvable.' });
 
     const { title, artist, genre, tracks, year, price, emoji, grad, tag, featured, description, is_active } = req.body;
-    const cover_path = req.file ? `/uploads/covers/${req.file.filename}` : album.cover_path;
+    
+    let cover_path = album.cover_path;
+    try {
+      if (req.file) {
+        cover_path = await uploadImageToCloud(req.file.buffer);
+      }
+    } catch(e) { console.error('Erreur upload cover:', e.message); }
 
     db.run(
       `UPDATE albums SET title=?,artist=?,genre=?,tracks=?,year=?,price=?,emoji=?,grad=?,tag=?,featured=?,description=?,cover_path=?,is_active=? WHERE id=?`,
@@ -80,9 +88,9 @@ router.put('/:id', requireAdmin, (req, res) => {
   });
 });
 
-// PUT /api/albums/:id/audio (admin) — upload plusieurs MP3
+// PUT /api/albums/:id/audio (admin) — upload plusieurs MP3 vers Cloudinary
 router.put('/:id/audio', requireAdmin, (req, res) => {
-  uploadAudio.array('audio', 30)(req, res, (err) => {
+  uploadAudio.array('audio', 30)(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
 
     const album = db.get('SELECT * FROM albums WHERE id = ?', [req.params.id]);
@@ -95,28 +103,33 @@ router.put('/:id/audio', requireAdmin, (req, res) => {
     let count = db.get('SELECT COUNT(*) as c FROM tracks WHERE album_id = ?', [album.id]).c;
     const uploaded = [];
 
-    files.forEach((file, i) => {
-      const file_path    = `/uploads/music/${file.filename}`;
-      const originalName = file.originalname.replace(/\.[^/.]+$/, '');
-      const track_num    = count + i + 1;
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const originalName = file.originalname.replace(/\.[^/.]+$/, '');
+        const track_num = count + i + 1;
 
-      db.run(
-        'INSERT INTO tracks (album_id, title, track_num, file_path) VALUES (?, ?, ?, ?)',
-        [album.id, originalName, track_num, file_path]
-      );
-      uploaded.push({ track_num, title: originalName, file_path });
-    });
+        // Upload vers Cloudinary
+        const cloudUrl = await uploadAudioToCloud(file.buffer, file.originalname);
 
-    // Mettre à jour file_path de l'album avec le premier fichier
-    if (!album.file_path && uploaded.length > 0) {
-      db.run('UPDATE albums SET file_path = ? WHERE id = ?', [uploaded[0].file_path, album.id]);
+        db.run(
+          'INSERT INTO tracks (album_id, title, track_num, file_path) VALUES (?, ?, ?, ?)',
+          [album.id, originalName, track_num, cloudUrl]
+        );
+        uploaded.push({ track_num, title: originalName, file_path: cloudUrl });
+      }
+
+      // Mettre à jour file_path et tracks count
+      if (!album.file_path && uploaded.length > 0) {
+        db.run('UPDATE albums SET file_path = ? WHERE id = ?', [uploaded[0].file_path, album.id]);
+      }
+      const totalTracks = db.get('SELECT COUNT(*) as c FROM tracks WHERE album_id = ?', [album.id]).c;
+      db.run('UPDATE albums SET tracks = ? WHERE id = ?', [totalTracks, album.id]);
+
+      res.json({ message: `${files.length} fichier(s) uploadé(s).`, tracks: uploaded });
+    } catch(e) {
+      res.status(500).json({ error: 'Erreur upload Cloudinary: ' + e.message });
     }
-
-    // Mettre à jour le nombre de titres dans l'album
-    const totalTracks = db.get('SELECT COUNT(*) as c FROM tracks WHERE album_id = ?', [album.id]).c;
-    db.run('UPDATE albums SET tracks = ? WHERE id = ?', [totalTracks, album.id]);
-
-    res.json({ message: `${files.length} fichier(s) uploadé(s).`, tracks: uploaded, total: totalTracks });
   });
 });
 
@@ -124,8 +137,9 @@ router.put('/:id/audio', requireAdmin, (req, res) => {
 router.delete('/:id', requireAdmin, (req, res) => {
   const album = db.get('SELECT * FROM albums WHERE id = ?', [req.params.id]);
   if (!album) return res.status(404).json({ error: 'Album introuvable.' });
-  db.run('UPDATE albums SET is_active = 0 WHERE id = ?', [album.id]);
-  res.json({ message: 'Album supprimé.' });
+  db.run('DELETE FROM tracks WHERE album_id = ?', [album.id]);
+  db.run('DELETE FROM albums WHERE id = ?', [album.id]);
+  res.json({ message: 'Album supprimé définitivement.' });
 });
 
 module.exports = router;
