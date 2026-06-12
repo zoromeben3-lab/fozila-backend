@@ -112,19 +112,20 @@ router.put('/:id/audio', requireAdmin, (req, res) => {
       db.run('UPDATE albums SET file_path = ? WHERE id = ?', [uploaded[0].file_path, album.id]);
     }
 
-    res.json({ message: `${files.length} fichier(s) uploadé(s).`, tracks: uploaded });
+    // Mettre à jour le nombre de titres dans l'album
+    const totalTracks = db.get('SELECT COUNT(*) as c FROM tracks WHERE album_id = ?', [album.id]).c;
+    db.run('UPDATE albums SET tracks = ? WHERE id = ?', [totalTracks, album.id]);
+
+    res.json({ message: `${files.length} fichier(s) uploadé(s).`, tracks: uploaded, total: totalTracks });
   });
 });
 
-// DELETE /api/albums/:id (admin) — suppression définitive
+// DELETE /api/albums/:id (admin)
 router.delete('/:id', requireAdmin, (req, res) => {
   const album = db.get('SELECT * FROM albums WHERE id = ?', [req.params.id]);
   if (!album) return res.status(404).json({ error: 'Album introuvable.' });
-  // Supprimer les tracks associés
-  db.run('DELETE FROM tracks WHERE album_id = ?', [album.id]);
-  // Supprimer l'album définitivement
-  db.run('DELETE FROM albums WHERE id = ?', [album.id]);
-  res.json({ message: 'Album supprimé définitivement.' });
+  db.run('UPDATE albums SET is_active = 0 WHERE id = ?', [album.id]);
+  res.json({ message: 'Album supprimé.' });
 });
 
 module.exports = router;
