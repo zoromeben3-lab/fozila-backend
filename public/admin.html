@@ -534,8 +534,6 @@ setInterval(() => {
 // ── PAGE NAVIGATION ──
 const pageTitles = { dashboard:'Tableau de <em>bord</em>', albums:'Gestion des <em>Albums</em>', singles:'Singles & <em>Titres</em>', featured:'Contenus en <em>vedette</em>', users:'<em>Utilisateurs</em>', announce:'Barre d\'<em>annonces</em>', withdrawals:'Retraits & <em>Revenus</em>', stats:'<em>Statistiques</em>' };
 function showPage(id) {
-  // Fermer la sidebar sur mobile
-  if (window.innerWidth <= 900) closeSidebar();
   document.querySelectorAll('.pc').forEach(p => p.style.display = 'none');
   document.getElementById('page-' + id).style.display = 'block';
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.textContent.toLowerCase().includes(id.slice(0,4))));
@@ -1103,6 +1101,7 @@ function toggleMobileNav() {
   document.getElementById('mobile-nav').classList.toggle('open');
   document.getElementById('mobile-nav-overlay').classList.toggle('open');
 }
+function closeSidebar() { closeMobileNav(); }
 function closeMobileNav() {
   document.getElementById('mobile-nav').classList.remove('open');
   document.getElementById('mobile-nav-overlay').classList.remove('open');
