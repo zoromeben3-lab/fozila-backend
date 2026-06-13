@@ -1,13 +1,10 @@
-// ═══════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════
 //  FOZILA — Client API partagé entre toutes les pages
 //  Toutes les données viennent du backend Node.js
 // ═══════════════════════════════════════════════════════
 
 const FOZILA = {
-API: window.location.hostname === 'localhost' 
-  ? '/api' 
-  : 'https://fozila-backend.onrender.com/api',
-  _cache: { albums: null, singles: null, announcements: null },
+	API: '/api',
 
   // ── APPEL API GÉNÉRIQUE ──
   async api(method, endpoint, body = null) {
