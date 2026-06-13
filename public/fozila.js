@@ -4,8 +4,8 @@
 // ═══════════════════════════════════════════════════════
 
 const FOZILA = {
-	API: '/api',
-
+	 API: '/api',
+  _cache: { albums: null, singles: null, announcements: null },
   // ── APPEL API GÉNÉRIQUE ──
   async api(method, endpoint, body = null) {
     const opts = { method, headers: { 'Content-Type': 'application/json' } };
