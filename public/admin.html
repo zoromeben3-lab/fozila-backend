@@ -1081,5 +1081,25 @@ async function renderDash() {
 // INIT
 renderDash();
 </script>
+<script>
+function toggleSidebar() {
+  var sidebar = document.querySelector('.sidebar');
+  var overlay = document.querySelector('.sidebar-overlay');
+  if (!sidebar) return;
+  if (sidebar.classList.contains('open')) {
+    sidebar.classList.remove('open');
+    if (overlay) overlay.style.display = 'none';
+  } else {
+    sidebar.classList.add('open');
+    if (overlay) overlay.style.display = 'block';
+  }
+}
+function closeSidebar() {
+  var sidebar = document.querySelector('.sidebar');
+  var overlay = document.querySelector('.sidebar-overlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.style.display = 'none';
+}
+</script>
 </body>
 </html>
