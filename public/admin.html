@@ -677,10 +677,19 @@ async function updateAlbum() {
   try {
     const res = await fetch(FOZILA.API+'/albums/'+id, { method:'PUT', headers:{'Authorization':'Bearer '+FOZILA.getToken()}, body:formData });
     if (!res.ok) throw new Error((await res.json()).error);
-    const audioFile = document.getElementById('edit-al-audio-file');
-    if (audioFile && audioFile.files[0]) {
-      const af = new FormData(); af.append('audio', audioFile.files[0]);
-      await fetch(FOZILA.API+'/albums/'+id+'/audio', { method:'PUT', headers:{'Authorization':'Bearer '+FOZILA.getToken()}, body:af });
+    const audioInput = document.getElementById('edit-al-audio-file');
+    if (audioInput && audioInput.files.length > 0) {
+      const af = new FormData();
+      for (let i = 0; i < audioInput.files.length; i++) {
+        af.append('audio', audioInput.files[i]);
+      }
+      const audioRes = await fetch(FOZILA.API+'/albums/'+id+'/audio', {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + FOZILA.getToken() },
+        body: af
+      });
+      const audioData = await audioRes.json();
+      if (audioRes.ok) toast('✅ ' + audioData.message, 'success');
     }
     closeModal('m-edit-album'); renderAlbums();
     toast('✓ Album mis à jour', 'success');
