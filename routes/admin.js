@@ -4,16 +4,10 @@ const { requireAdmin } = require('../middleware/auth');
 
 router.use(requireAdmin);
 
-// Tous les albums (brouillons inclus, supprimés exclus)
-router.get('/albums', (req, res) => {
-  const albums = db.all('SELECT * FROM albums WHERE is_active >= 0 ORDER BY id DESC');
-  res.json(albums);
-});
-
-// Tous les singles (brouillons inclus)
-router.get('/singles', (req, res) => {
-  const singles = db.all('SELECT * FROM singles ORDER BY id DESC');
-  res.json(singles);
+// Toutes les annonces avec IDs
+router.get('/announcements', (req, res) => {
+  const list = db.all('SELECT * FROM announcements WHERE is_active=1 ORDER BY id DESC');
+  res.json(list);
 });
 
 router.get('/stats', (req, res) => {

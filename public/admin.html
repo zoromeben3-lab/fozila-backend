@@ -946,16 +946,16 @@ async function renderUsers() {
 let _annCache = [];
 async function renderAnn() {
   try {
-    const res = await fetch(FOZILA.API+'/announcements', { headers:{'Authorization':'Bearer '+FOZILA.getToken()} });
-    // Charger la liste complète avec IDs via admin
-    const full = await FOZILA.api('GET', '/admin/stats'); // on utilise une autre approche
-  } catch {}
-  // Fallback : charger via endpoint public
-  try {
-    const res = await fetch(FOZILA.API+'/announcements');
-    const list = await res.json();
+    // Charger les annonces avec leurs IDs
+    const res = await fetch(FOZILA.API+'/admin/announcements', { headers:{'Authorization':'Bearer '+FOZILA.getToken()} });
+    const list = res.ok ? await res.json() : [];
+    _annCache = list;
     document.getElementById('ann-list').innerHTML = list.length
-      ? list.map((a,i)=>`<div class="ann-row"><span>${a}</span></div>`).join('')
+      ? list.map(a=>`
+          <div class="ann-row" style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:8px;margin-bottom:6px;">
+            <span style="flex:1;font-size:13px;">${a.content}</span>
+            <button onclick="removeAnn(${a.id})" style="background:var(--red);border:none;color:#fff;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;flex-shrink:0;">🗑️</button>
+          </div>`).join('')
       : '<p style="color:var(--muted);font-size:0.82rem;margin-bottom:10px;">Aucune annonce.</p>';
   } catch(err) { toast('Erreur chargement annonces','error'); }
 }
@@ -969,8 +969,14 @@ async function addAnn() {
     renderAnn(); toast('Annonce ajoutée !','success');
   } catch(err) { toast(err.message||'Erreur','error'); }
 }
-async function removeAnn(i) {
-  toast("Pour supprimer une annonce, utilisez l'API directement (feature à venir)", 'info');
+async function removeAnn(id) {
+  if (!confirm('Supprimer cette annonce ?')) return;
+  try {
+    await FOZILA.api('DELETE', '/announcements/' + id);
+    FOZILA._cache.announcements = null;
+    renderAnn();
+    toast('Annonce supprimée', 'success');
+  } catch(err) { toast(err.message || 'Erreur', 'error'); }
 }
 
 // ── VISITEURS ──
