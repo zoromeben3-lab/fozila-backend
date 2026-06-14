@@ -242,3 +242,32 @@ const FOZILA = {
 };
 
 FOZILA.trackVisit();
+
+// ── PWA INSTALLATION ──
+let _deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredPrompt = e;
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.style.display = 'block';
+});
+
+window.addEventListener('appinstalled', () => {
+  _deferredPrompt = null;
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.style.display = 'none';
+});
+
+function installApp() {
+  if (_deferredPrompt) {
+    _deferredPrompt.prompt();
+    _deferredPrompt.userChoice.then(() => {
+      _deferredPrompt = null;
+      const banner = document.getElementById('install-banner');
+      if (banner) banner.style.display = 'none';
+    });
+  } else {
+    alert('Pour installer Fôzila :\n\n1. Appuie sur ⋮ en haut à droite\n2. Appuie sur "Ajouter à l\'écran d\'accueil"\n3. Appuie sur "Ajouter" ✅');
+  }
+}
