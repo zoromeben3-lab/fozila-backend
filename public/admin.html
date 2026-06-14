@@ -533,13 +533,13 @@ setInterval(() => {
 
 // ── PAGE NAVIGATION ──
 const pageTitles = { dashboard:'Tableau de <em>bord</em>', albums:'Gestion des <em>Albums</em>', singles:'Singles & <em>Titres</em>', featured:'Contenus en <em>vedette</em>', users:'<em>Utilisateurs</em>', announce:'Barre d\'<em>annonces</em>', withdrawals:'Retraits & <em>Revenus</em>', stats:'<em>Statistiques</em>' };
-function showPage(id) {
+async function showPage(id) {
   document.querySelectorAll('.pc').forEach(p => p.style.display = 'none');
   document.getElementById('page-' + id).style.display = 'block';
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.textContent.toLowerCase().includes(id.slice(0,4))));
   document.getElementById('page-title').innerHTML = pageTitles[id] || id;
   const fn = { albums:renderAlbums, singles:renderSingles, users:renderUsers, announce:renderAnn, featured:renderFeatured, stats:renderStats, withdrawals:renderWithdrawals, dashboard:renderDash };
-  if (fn[id]) fn[id]();
+  if (fn[id]) await fn[id]();
 }
 
 // ── COVER HANDLER ──
@@ -944,7 +944,7 @@ async function renderUsers() {
 
 // ── ANNONCES ──
 let _annCache = [];
-async async function renderAnn() {
+async function renderAnn() {
   try {
     // Charger les annonces avec leurs IDs
     const res = await fetch(FOZILA.API+'/admin/announcements', { headers:{'Authorization':'Bearer '+FOZILA.getToken()} });
@@ -1012,7 +1012,7 @@ async function updateWithdrawalStatus(id, status) {
   } catch(err) { toast(err.message||'Erreur','error'); }
 }
 
-async async function renderWithdrawals() {
+async function renderWithdrawals() {
   try {
     const stats = await FOZILA.api('GET', '/admin/stats');
     const ws    = await FOZILA.api('GET', '/admin/withdrawals');
@@ -1044,7 +1044,7 @@ async async function renderWithdrawals() {
 }
 
 // ── STATS ──
-async async function renderStats() {
+async function renderStats() {
   try {
     const data = await FOZILA.api('GET', '/admin/stats');
     const { stats, topAlbums, topSingles } = data;
@@ -1073,7 +1073,7 @@ async async function renderStats() {
 }
 
 // ── DASHBOARD ──
-async async function renderDash() {
+async function renderDash() {
   try {
     const data = await FOZILA.api('GET', '/admin/stats');
     const { stats, recentPurchases } = data;
