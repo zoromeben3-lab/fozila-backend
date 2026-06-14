@@ -1,8 +1,4 @@
-// ══════════════════════════════════════════════════
-//  FOZILA — Service Worker PWA
-// ══════════════════════════════════════════════════
-
-const CACHE_NAME = 'fozila-v1';
+const CACHE_NAME = 'fozila-v2';
 const STATIC_FILES = [
   '/',
   '/index.html',
@@ -14,45 +10,37 @@ const STATIC_FILES = [
   '/fozila.css',
   '/fozila.js',
   '/bg-pattern.jpg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/manifest.json',
 ];
 
-// Installation — mise en cache des fichiers statiques
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_FILES);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_FILES))
   );
   self.skipWaiting();
 });
 
-// Activation — supprimer les anciens caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
   );
   self.clients.claim();
 });
 
-// Fetch — stratégie Network First pour l'API, Cache First pour les fichiers statiques
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // API calls → toujours réseau (pas de cache)
-  if (url.hostname.includes('onrender.com') || url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(event.request).catch(() => {
-      return new Response(JSON.stringify({ error: 'Hors ligne' }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }));
+  // API calls -> toujours réseau
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
     return;
   }
 
-  // Fichiers statiques → Cache First
+  // Fichiers statiques -> Cache First
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
