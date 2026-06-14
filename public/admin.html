@@ -533,13 +533,13 @@ setInterval(() => {
 
 // ── PAGE NAVIGATION ──
 const pageTitles = { dashboard:'Tableau de <em>bord</em>', albums:'Gestion des <em>Albums</em>', singles:'Singles & <em>Titres</em>', featured:'Contenus en <em>vedette</em>', users:'<em>Utilisateurs</em>', announce:'Barre d\'<em>annonces</em>', withdrawals:'Retraits & <em>Revenus</em>', stats:'<em>Statistiques</em>' };
-async async function showPage(id) {
+function showPage(id) {
   document.querySelectorAll('.pc').forEach(p => p.style.display = 'none');
   document.getElementById('page-' + id).style.display = 'block';
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.textContent.toLowerCase().includes(id.slice(0,4))));
   document.getElementById('page-title').innerHTML = pageTitles[id] || id;
   const fn = { albums:renderAlbums, singles:renderSingles, users:renderUsers, announce:renderAnn, featured:renderFeatured, stats:renderStats, withdrawals:renderWithdrawals, dashboard:renderDash };
-  if (fn[id]) await fn[id]();
+  if (fn[id]) Promise.resolve(fn[id]()).catch(e => console.error(e));
 }
 
 // ── COVER HANDLER ──
