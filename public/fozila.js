@@ -5,6 +5,7 @@
 
 const FOZILA = {
 	API: '/api',
+  _cache: { albums: null, singles: null, announcements: null },
 
   // ── APPEL API GÉNÉRIQUE ──
   async api(method, endpoint, body = null) {
@@ -136,7 +137,7 @@ const FOZILA = {
     const nav  = document.getElementById('main-nav');
     if (!nav) return;
     nav.innerHTML = `
-      <a href="index.html" class="logo"><em>Fozila</em></a>
+      <a href="index.html" class="logo"><em>Fôzila</em></a>
       <ul class="nav-links">
         <li><a href="index.html"   ${activePage==='home'    ?'class="active"':''}>Accueil</a></li>
         <li><a href="albums.html"  ${activePage==='albums'  ?'class="active"':''}>Albums</a></li>
@@ -172,7 +173,6 @@ const FOZILA = {
         <a href="singles.html" class="mobile-link">Singles</a>
         <a href="index.html#comment-ca-marche" class="mobile-link">Comment ça marche</a>
         <hr style="border-color:rgba(255,255,255,0.07);margin:8px 0;">
-        <button id="install-btn" class="mobile-link" style="background:var(--v);border:none;color:#fff;text-align:left;font-family:inherit;font-size:14px;cursor:pointer;padding:10px 12px;border-radius:8px;width:100%;display:none;" onclick="installApp()">📲 Installer Fôzila sur mon téléphone</button>
         ${user ? `
           <a href="dashboard.html" class="mobile-link">👤 Mon espace</a>
           ${user.isAdmin ? `<a href="admin.html" class="mobile-link" style="color:#A78BFA;">⚙️ Admin</a>` : ''}
@@ -242,33 +242,3 @@ const FOZILA = {
 };
 
 FOZILA.trackVisit();
-
-// ── PWA INSTALLATION ──
-let _deferredPrompt = null;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  _deferredPrompt = e;
-  // Afficher le bouton dans le menu
-  const btn = document.getElementById('install-btn');
-  if (btn) btn.style.display = 'block';
-});
-
-window.addEventListener('appinstalled', () => {
-  _deferredPrompt = null;
-  const btn = document.getElementById('install-btn');
-  if (btn) btn.style.display = 'none';
-});
-
-function installApp() {
-  if (_deferredPrompt) {
-    _deferredPrompt.prompt();
-    _deferredPrompt.userChoice.then(() => {
-      _deferredPrompt = null;
-      const btn = document.getElementById('install-btn');
-      if (btn) btn.style.display = 'none';
-    });
-  } else {
-    alert('Pour installer Fôzila :\n\n1. Appuie sur les 3 points en haut à droite\n2. Appuie sur "Ajouter à l\'écran d\'accueil"\n3. Appuie sur "Ajouter"');
-  }
-}
