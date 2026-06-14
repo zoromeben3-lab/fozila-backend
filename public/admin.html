@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fozila — Administration</title>
+<title>Fôzila — Administration</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#08080d;--surface:#101018;--surface2:#18181f;--border:rgba(255,255,255,0.07);--v:#7C3AED;--v-light:#A78BFA;--v-dim:rgba(124,58,237,0.12);--v-border:rgba(124,58,237,0.3);--text:#f0ede8;--muted:#6b6880;--green:#2dd4a0;--red:#e84c4c;--gold:#f0a500;--radius:14px;--radius-sm:8px;}
@@ -196,7 +196,7 @@ body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url('bg
   <div class="sb-logo">
     <div class="logo-wrap">
       <div class="logo-icon">🎵</div>
-      <div><div class="logo-text">Fozi<em>la</em></div><div class="logo-sub">Administration</div></div>
+      <div><div class="logo-text">Fôzi<em>la</em></div><div class="logo-sub">Administration</div></div>
     </div>
   </div>
   <div class="sb-profile">
@@ -944,7 +944,7 @@ async function renderUsers() {
 
 // ── ANNONCES ──
 let _annCache = [];
-async function renderAnn() {
+async async function renderAnn() {
   try {
     // Charger les annonces avec leurs IDs
     const res = await fetch(FOZILA.API+'/admin/announcements', { headers:{'Authorization':'Bearer '+FOZILA.getToken()} });
@@ -1012,7 +1012,7 @@ async function updateWithdrawalStatus(id, status) {
   } catch(err) { toast(err.message||'Erreur','error'); }
 }
 
-async function renderWithdrawals() {
+async async function renderWithdrawals() {
   try {
     const stats = await FOZILA.api('GET', '/admin/stats');
     const ws    = await FOZILA.api('GET', '/admin/withdrawals');
@@ -1044,7 +1044,7 @@ async function renderWithdrawals() {
 }
 
 // ── STATS ──
-async function renderStats() {
+async async function renderStats() {
   try {
     const data = await FOZILA.api('GET', '/admin/stats');
     const { stats, topAlbums, topSingles } = data;
@@ -1073,7 +1073,7 @@ async function renderStats() {
 }
 
 // ── DASHBOARD ──
-async function renderDash() {
+async async function renderDash() {
   try {
     const data = await FOZILA.api('GET', '/admin/stats');
     const { stats, recentPurchases } = data;

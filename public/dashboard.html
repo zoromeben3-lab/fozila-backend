@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fozila — Mon espace</title>
+  <title>Fôzila — Mon espace</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="fozila.css"/>
   <style>
@@ -46,8 +46,8 @@
     <!-- MA BIBLIOTHÈQUE -->
     <div class="dash-panel active" id="panel-library">
       <div class="card">
-        <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;">🎵 Ma bibliothèque</h3>
-        <div id="lib-albums"></div>
+        <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;">Albums achetés</h3>
+        <div class="lib-grid" id="lib-albums"></div>
       </div>
     </div>
 
@@ -77,10 +77,7 @@
   <script src="fozila.js"></script>
   <script>
     const user = FOZILA.getUser();
-    const token = FOZILA.getToken();
-    if (!user || !token) {
-      location.href = 'auth.html?redirect=dashboard.html';
-    }
+    if (!user || !FOZILA.getToken()) { location.href = 'auth.html'; }
 
     FOZILA.injectNav('dashboard');
     FOZILA.injectAnnounce();
@@ -122,53 +119,23 @@
       // BIBLIOTHÈQUE
       const libGrid = document.getElementById('lib-albums');
       if (!purchases.length) {
-        libGrid.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);">
+        libGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">
           <div style="font-size:48px;margin-bottom:12px;">🎵</div>
           <p style="margin-bottom:16px;">Votre bibliothèque est vide.</p>
           <a href="albums.html" class="btn-primary">Parcourir les albums</a>
         </div>`;
       } else {
         libGrid.innerHTML = purchases.map(p => `
-          <div data-item-id="${p.item_id}" style="background:var(--card2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
-
-            <!-- EN-TÊTE -->
-            <div style="display:flex;align-items:center;gap:14px;padding:16px 20px;background:rgba(255,255,255,0.02);">
-              <div style="width:56px;height:56px;border-radius:12px;flex-shrink:0;overflow:hidden;background:${p.item?.grad||'var(--card)'};display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,0.4);">
-                ${p.item?.cover_path ? `<img src="${p.item.cover_path}" style="width:100%;height:100%;object-fit:cover;">` : (p.item?.emoji||'🎵')}
-              </div>
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:15px;font-weight:700;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.item?.title||'Article'}</div>
-                <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${p.item_type==='album'?'💿 Album complet':'🎵 Single'} · Acheté · ${FOZILA.fmt(p.amount)}</div>
-                ${p.item_type === 'single' ? `
-                  <div style="display:flex;gap:6px;">
-                    <button onclick="playOnline('${p.download_token}','${p.item?.title||''}')"
-                      style="display:flex;align-items:center;gap:5px;background:var(--v);border:none;color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;">
-                      ▶ Écouter
-                    </button>
-                    <button onclick="downloadTrack('${p.download_token}',null)"
-                      style="display:flex;align-items:center;gap:5px;background:var(--green);border:none;color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;">
-                      ⬇️ Télécharger
-                    </button>
-                  </div>
-                ` : `
-                  <div style="font-size:11px;color:var(--v-light);">↓ Tous les titres ci-dessous — cliquez pour écouter ou télécharger</div>
-                `}
-              </div>
+          <div class="lib-card">
+            <div class="cov" style="background:${p.item?.grad||'var(--card2)'};width:70px;height:70px;border-radius:10px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">
+              ${p.item?.cover_path ? `<img src="${p.item.cover_path}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : (p.item?.emoji||'🎵')}
             </div>
-
-            <!-- TITRES ALBUM — affichés automatiquement -->
-            ${p.item_type === 'album' ? `
-              <div id="tracks-${p.download_token}" style="border-top:1px solid var(--border);padding:4px 20px 12px;">
-                <div class="tracks-loading" style="color:var(--muted);font-size:13px;text-align:center;padding:12px;">⏳ Chargement des titres…</div>
-              </div>
-            ` : ''}
+            <div class="ttl">${p.item?.title || 'Article'}</div>
+            <div class="prc">${p.item_type==='album'?'💿 Album':'🎵 Single'} · ${FOZILA.fmt(p.amount)}</div>
+            <button class="btn-green" style="width:100%;padding:6px;font-size:11px;border-radius:6px;"
+              onclick="FOZILA.download('${p.download_token}')">⬇️ Télécharger</button>
           </div>
         `).join('');
-
-        // Charger automatiquement les titres de chaque album
-        purchases.filter(p => p.item_type === 'album').forEach(p => {
-          loadAlbumTracks(p.download_token);
-        });
       }
 
       // HISTORIQUE
@@ -185,7 +152,7 @@
             </div>
             <div style="text-align:right;">
               <div style="font-size:14px;font-weight:700;color:var(--v-light);">${FOZILA.fmt(p.amount)}</div>
-              <button onclick="downloadTrack('${p.download_token}',null)" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:12px;margin-top:4px;">⬇️ Télécharger</button>
+              <button onclick="FOZILA.download('${p.download_token}')" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:12px;margin-top:4px;">⬇️ Télécharger</button>
             </div>
           </div>`).join('');
       }
@@ -210,162 +177,7 @@
       }
     }
 
-    // Event delegation pour les boutons single
-    document.getElementById('lib-albums').addEventListener('click', e => {
-      const btn = e.target.closest('[data-action]');
-      if (!btn) return;
-      const token = btn.dataset.token;
-      const title = btn.dataset.title || '';
-      if (btn.dataset.action === 'play') playOnline(token, title, null);
-      if (btn.dataset.action === 'dl')   downloadTrack(token, null);
-    });
-
-    loadDashboard().then(() => {
-      // Si redirigé après achat, ouvrir l'album automatiquement
-      const urlParams = new URLSearchParams(location.search);
-      const highlightId = urlParams.get('album') || urlParams.get('single');
-      if (highlightId) {
-        // Attendre que la DOM soit rendue puis scroller vers l'article
-        setTimeout(() => {
-          const cards = document.querySelectorAll('#lib-albums > div');
-          cards.forEach(card => {
-            if (card.dataset.itemId === highlightId) {
-              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              card.style.border = '2px solid var(--v-light)';
-              card.style.transition = 'border 0.3s';
-              setTimeout(() => card.style.border = '1px solid var(--border)', 3000);
-            }
-          });
-        }, 300);
-      }
-    }).catch(console.error);
-
-    // ── CHARGEMENT AUTO DES TITRES ──
-    async function loadAlbumTracks(token) {
-      const zone = document.getElementById('tracks-' + token);
-      if (!zone) return;
-      try {
-        const res    = await fetch('/api/download/' + token + '/tracks');
-        const tracks = await res.json();
-
-        if (!tracks.length) {
-          zone.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);"><div style="font-size:32px;margin-bottom:8px;">🎵</div><p style="font-size:13px;">Aucun titre disponible.</p></div>';
-          return;
-        }
-
-        // Construire le HTML sans backticks imbriqués
-        const header = '<div style="padding:8px 0 4px;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;">' + tracks.length + ' titre' + (tracks.length > 1 ? 's' : '') + '</div>';
-
-        const rows = tracks.map(t => {
-          const row = document.createElement('div');
-          row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);';
-
-          const num = document.createElement('span');
-          num.style.cssText = 'font-size:12px;color:var(--muted);width:24px;text-align:center;flex-shrink:0;font-weight:600;';
-          num.textContent = t.track_num;
-
-          const title = document.createElement('span');
-          title.style.cssText = 'flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-          title.textContent = t.title;
-
-          const btns = document.createElement('div');
-          btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
-
-          const btnPlay = document.createElement('button');
-          btnPlay.style.cssText = 'background:var(--v);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:500;';
-          btnPlay.textContent = '▶ Écouter';
-          btnPlay.addEventListener('click', () => playOnline(token, t.title, t.id));
-
-          const btnDl = document.createElement('button');
-          btnDl.style.cssText = 'background:var(--green);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:500;';
-          btnDl.textContent = '⬇️ Télécharger';
-          btnDl.addEventListener('click', () => downloadTrack(token, t.id));
-
-          btns.appendChild(btnPlay);
-          btns.appendChild(btnDl);
-          row.appendChild(num);
-          row.appendChild(title);
-          row.appendChild(btns);
-          return row;
-        });
-
-        zone.innerHTML = header;
-        rows.forEach(r => zone.appendChild(r));
-
-      } catch(e) {
-        zone.innerHTML = '<p style="color:var(--red);font-size:13px;padding:12px 0;">Erreur chargement des titres.</p>';
-      }
-    }
-
-    // ── LECTEUR EN LIGNE ──
-    let _onlinePlayer = null;
-
-    function playOnline(token, title, trackId) {
-      if (_onlinePlayer) { _onlinePlayer.pause(); _onlinePlayer = null; }
-
-      // Construction URL — pas de stream=1, on laisse le backend gérer
-      // ?dl=0 = streaming (pas de téléchargement forcé)
-      const src = trackId
-        ? '/api/download/' + token + '/track/' + trackId + '?dl=0'
-        : '/api/download/' + token + '?dl=0';
-
-      // Créer ou réutiliser le lecteur flottant
-      let el = document.getElementById('online-player');
-      if (!el) {
-        el = document.createElement('div');
-        el.id = 'online-player';
-        el.style.cssText = [
-          'position:fixed', 'bottom:24px', 'left:50%', 'transform:translateX(-50%)',
-          'z-index:9999', 'background:#111', 'border:1px solid #7C3AED',
-          'border-radius:16px', 'padding:16px 20px', 'min-width:320px', 'max-width:500px',
-          'box-shadow:0 8px 40px rgba(0,0,0,0.8)', 'width:90%'
-        ].join(';');
-        document.body.appendChild(el);
-      }
-
-      el.innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#7C3AED,#4c1d95);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🎵</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;color:#f0f0f0;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${title}</div>
-            <audio id="online-audio" controls preload="auto"
-              style="width:100%;height:36px;border-radius:8px;outline:none;"
-              src="${src}">
-            </audio>
-          </div>
-          <button onclick="closePlayer()"
-            style="background:rgba(255,255,255,0.1);border:none;color:#fff;cursor:pointer;font-size:14px;width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;">✕</button>
-        </div>
-      `;
-
-      const audio = document.getElementById('online-audio');
-      // Tentative de lecture automatique
-      audio.play().catch(() => {
-        // Lecture auto bloquée par le navigateur — le client peut cliquer play manuellement
-        FOZILA.toast('Cliquez ▶ dans le lecteur pour démarrer', 'info');
-      });
-      _onlinePlayer = audio;
-    }
-
-    function closePlayer() {
-      if (_onlinePlayer) { _onlinePlayer.pause(); _onlinePlayer = null; }
-      const el = document.getElementById('online-player');
-      if (el) el.remove();
-    }
-
-    function downloadTrack(token, trackId) {
-      // Créer un lien temporaire pour télécharger sans ouvrir de page blanche
-      const url  = trackId
-        ? '/api/download/' + token + '/track/' + trackId
-        : '/api/download/' + token;
-      const link = document.createElement('a');
-      link.href     = url;
-      link.download = '';
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+    loadDashboard().catch(console.error);
   </script>
 </body>
 </html>

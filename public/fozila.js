@@ -4,8 +4,8 @@
 // ═══════════════════════════════════════════════════════
 
 const FOZILA = {
-	 API: '/api',
-  _cache: { albums: null, singles: null, announcements: null },
+	API: '/api',
+
   // ── APPEL API GÉNÉRIQUE ──
   async api(method, endpoint, body = null) {
     const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -136,7 +136,7 @@ const FOZILA = {
     const nav  = document.getElementById('main-nav');
     if (!nav) return;
     nav.innerHTML = `
-      <a href="index.html" class="logo"><em>Fozila</em></a>
+      <a href="index.html" class="logo"><em>Fôzila</em></a>
       <ul class="nav-links">
         <li><a href="index.html"   ${activePage==='home'    ?'class="active"':''}>Accueil</a></li>
         <li><a href="albums.html"  ${activePage==='albums'  ?'class="active"':''}>Albums</a></li>
@@ -167,7 +167,6 @@ const FOZILA = {
         <span></span><span></span><span></span>
       </button>
       <div class="mobile-menu" id="mobile-menu">
-        <a href="index.html"   class="mobile-link">Accueil</a>
         <a href="albums.html"  class="mobile-link">Albums</a>
         <a href="singles.html" class="mobile-link">Singles</a>
         <a href="index.html#comment-ca-marche" class="mobile-link">Comment ça marche</a>

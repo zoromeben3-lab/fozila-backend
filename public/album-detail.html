@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fozila — Album</title>
+  <title>Fôzila — Album</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="fozila.css"/>
   <style>
@@ -240,7 +240,7 @@
         document.getElementById('detail-content').innerHTML = '<p style="color:var(--muted);grid-column:1/-1;">Album introuvable. <a href="albums.html">Retour</a></p>';
         return;
       }
-      document.title = 'Fozila — ' + album.title;
+      document.title = 'Fôzila — ' + album.title;
       const owned = user ? await FOZILA.hasPurchased(album.id, 'album') : false;
 
       // Charger les vrais titres depuis la DB

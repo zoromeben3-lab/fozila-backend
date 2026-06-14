@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fozila — Singles</title>
+  <title>Fôzila — Singles</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="fozila.css"/>
   <style>
@@ -99,7 +99,7 @@
       grid.innerHTML = allSingles.map((s, i) => `
         <div class="single-card">
           <div class="single-cover" style="background:${s.grad}">
-            ${s.cover_path ? `<img src="${s.cover_path.startsWith('http') ? s.cover_path : 'https://fozila-backend.onrender.com' + s.cover_path}" style="width:100%;height:100%;object-fit:cover;">` : s.emoji}
+            ${s.cover_path ? `<img src="${s.cover_path}" style="width:100%;height:100%;object-fit:cover;">` : s.emoji}
             ${s.featured ? '<span class="featured-star">⭐</span>' : ''}
           </div>
           <div class="single-info">
