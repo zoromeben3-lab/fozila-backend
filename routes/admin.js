@@ -4,20 +4,14 @@ const { requireAdmin } = require('../middleware/auth');
 
 router.use(requireAdmin);
 
-// Toutes les annonces avec IDs
-router.get('/announcements', (req, res) => {
-  const list = db.all('SELECT * FROM announcements WHERE is_active=1 ORDER BY id DESC');
-  res.json(list);
-});
-
 router.get('/stats', (req, res) => {
   const users     = db.get('SELECT COUNT(*) as c FROM users WHERE is_admin=0').c;
   const albums    = db.get('SELECT COUNT(*) as c FROM albums WHERE is_active=1').c;
   const singles   = db.get('SELECT COUNT(*) as c FROM singles WHERE is_active=1 AND live=1').c;
   const revenue   = db.get(`SELECT COALESCE(SUM(amount),0) as t FROM purchases WHERE status='completed'`).t;
   const purchases = db.get(`SELECT COUNT(*) as c FROM purchases WHERE status='completed'`).c;
-  const topAlbums  = db.all('SELECT id,title,emoji,grad,sales,price FROM albums ORDER BY sales DESC LIMIT 5');
-  const topSingles = db.all('SELECT id,title,emoji,grad,sales,price FROM singles ORDER BY sales DESC LIMIT 5');
+  const topAlbums  = db.all('SELECT id,title,emoji,grad,sales,price FROM albums WHERE is_active=1 ORDER BY sales DESC LIMIT 5');
+  const topSingles = db.all('SELECT id,title,emoji,grad,sales,price FROM singles WHERE is_active=1 AND live=1 ORDER BY sales DESC LIMIT 5');
   const recent     = db.all(`SELECT p.*,u.name as user_name FROM purchases p JOIN users u ON p.user_id=u.id WHERE p.status='completed' ORDER BY p.purchased_at DESC LIMIT 10`);
   res.json({ stats: { users, albums, singles, revenue, purchases }, topAlbums, topSingles, recentPurchases: recent });
 });
