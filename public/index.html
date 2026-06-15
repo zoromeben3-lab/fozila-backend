@@ -6,6 +6,14 @@
   <title>Fôliza — Votre musique, en ligne</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="fozila.css"/>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#7C3AED"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Fôliza"/>
+  <link rel="apple-touch-icon" href="icon-192.png"/>
   <style>
     body { padding-top: 96px; } /* nav 60px + announce 36px */
     
@@ -145,6 +153,15 @@
   </footer>
 
   <script src="fozila.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('✅ PWA SW enregistré'))
+          .catch(e => console.log('SW error:', e));
+      });
+    }
+  </script>
   <script>
     FOZILA.injectNav('home');
     FOZILA.injectAnnounce();
