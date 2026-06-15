@@ -1,4 +1,13 @@
 const router  = require('express').Router();
+
+// ── MIGRATION: ajouter colonne phone si elle n'existe pas ──
+try {
+  const db_temp = require('../config/db');
+  db_temp.run("ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''");
+  console.log('✅ Colonne phone ajoutée à users');
+} catch(e) {
+  // Colonne déjà existante - OK
+}
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const db      = require('../config/db');
