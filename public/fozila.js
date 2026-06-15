@@ -137,7 +137,7 @@ const FOZILA = {
     const nav  = document.getElementById('main-nav');
     if (!nav) return;
     nav.innerHTML = `
-      <a href="index.html" class="logo"><em>Fôzila</em></a>
+      <a href="index.html" class="logo"><em>Fôliza</em></a>
       <ul class="nav-links">
         <li><a href="index.html"   ${activePage==='home'    ?'class="active"':''}>Accueil</a></li>
         <li><a href="albums.html"  ${activePage==='albums'  ?'class="active"':''}>Albums</a></li>
@@ -268,6 +268,6 @@ function installApp() {
       if (banner) banner.style.display = 'none';
     });
   } else {
-    alert('Pour installer Fôzila :\n\n1. Appuie sur ⋮ en haut à droite\n2. Appuie sur "Ajouter à l\'écran d\'accueil"\n3. Appuie sur "Ajouter" ✅');
+    alert('Pour installer Fôliza :\n\n1. Appuie sur ⋮ en haut à droite\n2. Appuie sur "Ajouter à l\'écran d\'accueil"\n3. Appuie sur "Ajouter" ✅');
   }
 }

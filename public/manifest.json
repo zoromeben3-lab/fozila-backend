@@ -1,6 +1,6 @@
 {
-  "name": "Fozila — Votre musique en ligne",
-  "short_name": "Fozila",
+  "name": "Fôliza — Votre musique en ligne",
+  "short_name": "Fôliza",
   "description": "Achetez et téléchargez de la musique africaine",
   "id": "/",
   "start_url": "/",
@@ -28,6 +28,9 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["music", "entertainment"],
+  "categories": [
+    "music",
+    "entertainment"
+  ],
   "lang": "fr"
 }

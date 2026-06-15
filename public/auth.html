@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fôzila — Connexion</title>
+  <title>Fôliza — Connexion</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
     /* ── RESET COMPLET pour cette page ── */
@@ -190,7 +190,7 @@
 
   <div class="auth-wrap">
     <div class="auth-logo">
-      <a href="index.html" class="logo">Fôzi<em>la</em></a>
+      <a href="index.html" class="logo">Fôli<em>za</em></a>
       <p style="color:var(--muted);font-size:13px;margin-top:6px;">Votre musique, en un clic</p>
     </div>
 
@@ -233,17 +233,25 @@
       <!-- INSCRIPTION -->
       <div class="auth-form" id="form-register">
         <div class="field-wrap">
-          <label>Nom complet</label>
-          <input type="text" id="r-name" placeholder="Votre nom"
-            oninput="valName('r-name','r-name-msg','r-name-st')"/>
-          <span class="field-status" id="r-name-st"></span>
-          <div class="field-msg" id="r-name-msg"></div>
+          <label>Nom</label>
+          <input type="text" id="r-nom" placeholder="Votre nom"
+            oninput="valName('r-nom','r-nom-msg','r-nom-st')"/>
+          <span class="field-status" id="r-nom-st"></span>
+          <div class="field-msg" id="r-nom-msg"></div>
         </div>
 
         <div class="field-wrap">
-          <label>Adresse email</label>
-          <input type="email" id="r-email" placeholder="votre@email.com"
-            oninput="valEmail('r-email','r-email-msg','r-email-st')"/>
+          <label>Prénom</label>
+          <input type="text" id="r-prenom" placeholder="Votre prénom"
+            oninput="valName('r-prenom','r-prenom-msg','r-prenom-st')"/>
+          <span class="field-status" id="r-prenom-st"></span>
+          <div class="field-msg" id="r-prenom-msg"></div>
+        </div>
+
+        <div class="field-wrap">
+          <label>Adresse email <span style="color:var(--muted);font-size:11px;">(facultatif)</span></label>
+          <input type="email" id="r-email" placeholder="votre@email.com (optionnel)"
+            oninput="valEmailOpt('r-email','r-email-msg','r-email-st')"/>
           <span class="field-status" id="r-email-st"></span>
           <div class="field-msg" id="r-email-msg"></div>
         </div>
@@ -321,7 +329,16 @@
     }
 
     // ── Validations ──
-    function valEmail(id, msgId, stId) {
+    function valEmailOpt(id, msgId, stId) {
+  const v = document.getElementById(id).value.trim();
+  if (!v) { // email vide = OK
+    setFieldState(id, stId, msgId, '', '');
+    return;
+  }
+  valEmail(id, msgId, stId); // valider si rempli
+}
+
+function valEmail(id, msgId, stId) {
       const v  = document.getElementById(id).value.trim();
       const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
       document.getElementById(id).className    = v ? (ok ? 'valid' : 'invalid') : '';
@@ -413,14 +430,18 @@
 
     // ── INSCRIPTION ──
     async function doRegister() {
-      const nameOk = valName('r-name','r-name-msg','r-name-st');
-      const mailOk = valEmail('r-email','r-email-msg','r-email-st');
+      const nomOk  = valName('r-nom','r-nom-msg','r-nom-st');
+      const prenomOk = valName('r-prenom','r-prenom-msg','r-prenom-st');
+      const mailOk = true; // Email facultatif
       const pwdOk  = valPwd(document.getElementById('r-pwd').value);
       const conOk  = valConfirm();
-      if (!nameOk || !mailOk || !pwdOk || !conOk) { toast('Corrigez les erreurs', 'error'); return; }
+      if (!nomOk || !prenomOk || !pwdOk || !conOk) { toast('Corrigez les erreurs', 'error'); return; }
 
-      const name  = document.getElementById('r-name').value.trim();
-      const email = document.getElementById('r-email').value.trim();
+      const nom    = document.getElementById('r-nom').value.trim();
+      const prenom = document.getElementById('r-prenom').value.trim();
+      const name   = (nom + ' ' + prenom).trim();
+      let email = document.getElementById('r-email').value.trim();
+      if (!email) email = 'user_' + Date.now() + '@fozila.local'; // Email facultatif
       const pwd   = document.getElementById('r-pwd').value;
 
       const btn = document.getElementById('register-btn');
