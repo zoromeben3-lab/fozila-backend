@@ -343,7 +343,7 @@
   const btn = document.getElementById('admin-btn');
   btn.classList.add('loading');
   try {
-    const data = await FOZILA.api('POST', '/auth/login', { email, password: pwd });
+    const data = await FOZILA.api('POST', '/auth/login', { nom, prenom, password: pwd });
     FOZILA.setSession(data.token, data.user);
     toast('✓ Bienvenue ' + data.user.name, 'success');
     setTimeout(() => location.href = 'admin.html', 800);
@@ -455,11 +455,8 @@ function valEmail(id, msgId, stId) {
       const prenom = document.getElementById('l-prenom').value.trim();
       const pwd    = document.getElementById('l-pwd').value;
 
-      if (!email || !pwd) {
-        toast('Remplissez l\'email et le mot de passe', 'error'); return;
-      }
-      if (!valEmail('l-email','l-email-msg','l-email-st')) {
-        toast('Email invalide', 'error'); return;
+      if (!nom || !prenom || !pwd) {
+        toast('Remplissez tous les champs', 'error'); return;
       }
 
       const btn = document.getElementById('login-btn');
