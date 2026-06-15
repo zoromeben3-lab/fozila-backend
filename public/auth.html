@@ -204,16 +204,14 @@
       <div class="auth-form active" id="form-login">
         <div class="field-wrap">
           <label>Nom</label>
-          <input type="text" id="l-name" placeholder="Votre nom"
+          <input type="text" id="l-nom" placeholder="Votre nom"
             onkeydown="if(event.key==='Enter') doLogin()"/>
         </div>
 
         <div class="field-wrap">
-          <label>Numéro de téléphone</label>
-          <input type="tel" id="l-phone" placeholder="ex: 07 00 00 00 00"
+          <label>Prénom</label>
+          <input type="text" id="l-prenom" placeholder="Votre prénom"
             onkeydown="if(event.key==='Enter') doLogin()"/>
-          <span class="field-status" id="l-phone-st"></span>
-          <div class="field-msg" id="l-phone-msg"></div>
         </div>
 
         <div class="field-wrap">
@@ -453,9 +451,9 @@ function valEmail(id, msgId, stId) {
 
     // ── CONNEXION ──
     async function doLogin() {
-      const name  = document.getElementById('l-name').value.trim();
-      const phone = document.getElementById('l-phone').value.trim();
-      const pwd   = document.getElementById('l-pwd').value;
+      const nom    = document.getElementById('l-nom').value.trim();
+      const prenom = document.getElementById('l-prenom').value.trim();
+      const pwd    = document.getElementById('l-pwd').value;
 
       if (!email || !pwd) {
         toast('Remplissez l\'email et le mot de passe', 'error'); return;
@@ -468,7 +466,7 @@ function valEmail(id, msgId, stId) {
       btn.classList.add('loading'); btn.disabled = true;
 
       try {
-        const data = await FOZILA.api('POST', '/auth/login', { name, phone, password: pwd });
+        const data = await FOZILA.api('POST', '/auth/login', { nom, prenom, password: pwd });
         FOZILA.setSession(data.token, data.user);
         toast('Bienvenue ' + data.user.name + ' ! 🎵', 'success');
         const redirect = _p.get('redirect');

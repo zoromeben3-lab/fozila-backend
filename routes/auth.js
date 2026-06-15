@@ -6,7 +6,7 @@ const { requireAuth } = require('../middleware/auth');
 
 function genToken(user) {
   return jwt.sign(
-    { id: user.id, name: user.name, email: user.email, phone: user.phone, isAdmin: !!user.is_admin },
+    { id: user.id, name: user.name, isAdmin: !!user.is_admin },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
@@ -14,21 +14,22 @@ function genToken(user) {
 
 // POST /api/auth/register
 router.post('/register', (req, res) => {
-  const { name, phone, password } = req.body;
-  if (!name || !phone || !password)
-    return res.status(400).json({ error: 'Nom, numéro de téléphone et mot de passe requis.' });
+  const { nom, prenom, phone, password } = req.body;
+  if (!nom || !prenom || !phone || !password)
+    return res.status(400).json({ error: 'Tous les champs sont requis.' });
   if (password.length < 6)
     return res.status(400).json({ error: 'Mot de passe trop court (min. 6 caractères).' });
   if (!/^[\d\s+\-()]{8,15}$/.test(phone.trim()))
     return res.status(400).json({ error: 'Numéro de téléphone invalide.' });
 
+  const name = (nom.trim() + ' ' + prenom.trim());
   const existing = db.get('SELECT id FROM users WHERE phone = ?', [phone.trim()]);
   if (existing) return res.status(409).json({ error: 'Ce numéro est déjà utilisé.' });
 
   const hash  = bcrypt.hashSync(password, 12);
   const email = `user_${Date.now()}@foliza.local`;
   db.run('INSERT INTO users (name, email, phone, password) VALUES (?, ?, ?, ?)',
-    [name.trim(), email, phone.trim(), hash]);
+    [name, email, phone.trim(), hash]);
 
   const user  = db.get('SELECT * FROM users WHERE phone = ?', [phone.trim()]);
   const token = genToken(user);
@@ -40,40 +41,39 @@ router.post('/register', (req, res) => {
 
 // POST /api/auth/login
 router.post('/login', (req, res) => {
-  const { name, phone, password, email } = req.body;
+  const { nom, prenom, password } = req.body;
+  if (!nom || !prenom || !password)
+    return res.status(400).json({ error: 'Nom, prénom et mot de passe requis.' });
 
-  // ── CONNEXION ADMIN PAR EMAIL ──
-  if (email) {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPwd   = process.env.ADMIN_PASSWORD;
+  const name = (nom.trim() + ' ' + prenom.trim());
 
-    if (email.toLowerCase().trim() === adminEmail && password === adminPwd) {
-      let admin = db.get('SELECT * FROM users WHERE email = ?', [adminEmail]);
-      if (!admin) {
-        // Créer l'admin s'il n'existe pas encore
-        const hash = bcrypt.hashSync(adminPwd, 12);
-        db.run('INSERT INTO users (name, email, password, is_admin) VALUES (?, ?, ?, 1)',
-          [process.env.ADMIN_NAME || 'Administrateur', adminEmail, hash]);
-        admin = db.get('SELECT * FROM users WHERE email = ?', [adminEmail]);
-      }
-      const token = genToken(admin);
-      return res.json({
-        message: `Bienvenue ${admin.name} !`, token,
-        user: { id: admin.id, name: admin.name, email: admin.email, isAdmin: true }
-      });
+  // ── VÉRIFIER SI C'EST L'ADMIN ──
+  const adminNom    = process.env.ADMIN_NOM    || 'admin';
+  const adminPrenom = process.env.ADMIN_PRENOM || 'foliza';
+  const adminPwd    = process.env.ADMIN_PASSWORD;
+
+  if (nom.trim().toLowerCase() === adminNom.toLowerCase() &&
+      prenom.trim().toLowerCase() === adminPrenom.toLowerCase()) {
+    if (password !== adminPwd)
+      return res.status(401).json({ error: 'Mot de passe incorrect.' });
+
+    let admin = db.get('SELECT * FROM users WHERE is_admin = 1');
+    if (!admin) {
+      const hash = bcrypt.hashSync(adminPwd, 12);
+      db.run('INSERT INTO users (name, email, password, is_admin) VALUES (?, ?, ?, 1)',
+        [name, process.env.ADMIN_EMAIL || 'admin@foliza.local', hash]);
+      admin = db.get('SELECT * FROM users WHERE is_admin = 1');
     }
-    return res.status(401).json({ error: 'Email ou mot de passe admin incorrect.' });
+    const token = genToken(admin);
+    return res.json({
+      message: `Bienvenue ${admin.name} !`, token,
+      user: { id: admin.id, name: admin.name, isAdmin: true }
+    });
   }
 
-  // ── CONNEXION UTILISATEUR PAR TÉLÉPHONE ──
-  if (!phone || !password)
-    return res.status(400).json({ error: 'Numéro de téléphone et mot de passe requis.' });
-
-  const user = db.get('SELECT * FROM users WHERE phone = ?', [phone.trim()]);
-  if (!user) return res.status(401).json({ error: 'Numéro de téléphone introuvable.' });
-
-  if (name && user.name.toLowerCase() !== name.trim().toLowerCase())
-    return res.status(401).json({ error: 'Nom incorrect.' });
+  // ── CONNEXION UTILISATEUR NORMAL ──
+  const user = db.get('SELECT * FROM users WHERE LOWER(name) = LOWER(?)', [name]);
+  if (!user) return res.status(401).json({ error: 'Nom ou prénom introuvable.' });
 
   if (!bcrypt.compareSync(password, user.password))
     return res.status(401).json({ error: 'Mot de passe incorrect.' });
@@ -81,13 +81,13 @@ router.post('/login', (req, res) => {
   const token = genToken(user);
   res.json({
     message: `Bienvenue ${user.name} !`, token,
-    user: { id: user.id, name: user.name, phone: user.phone, isAdmin: !!user.is_admin }
+    user: { id: user.id, name: user.name, phone: user.phone, isAdmin: false }
   });
 });
 
 // GET /api/auth/me
 router.get('/me', requireAuth, (req, res) => {
-  const user = db.get('SELECT id,name,email,phone,is_admin,created_at FROM users WHERE id = ?', [req.user.id]);
+  const user = db.get('SELECT id,name,phone,is_admin,created_at FROM users WHERE id = ?', [req.user.id]);
   if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
   res.json({ ...user, isAdmin: !!user.is_admin });
 });
@@ -97,7 +97,6 @@ router.put('/me', requireAuth, (req, res) => {
   const { name, password } = req.body;
   const user = db.get('SELECT * FROM users WHERE id = ?', [req.user.id]);
   if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
-
   const newName = name?.trim() || user.name;
   let newHash   = user.password;
   if (password) {
