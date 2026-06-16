@@ -28,7 +28,7 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ error: 'Tous les champs sont requis.' });
   if (password.length < 6)
     return res.status(400).json({ error: 'Mot de passe trop court (min. 6 caractères).' });
-  if (!/^[\d\s+\-()]{8,15}$/.test(phone.trim()))
+  if (!/^[\d\s+\-()]{8,20}$/.test(phone.trim()))
     return res.status(400).json({ error: 'Numéro de téléphone invalide.' });
 
   const name = (nom.trim() + ' ' + prenom.trim());
@@ -61,10 +61,13 @@ router.post('/login', (req, res) => {
   const adminPrenom = process.env.ADMIN_PRENOM || 'foliza';
   const adminPwd    = process.env.ADMIN_PASSWORD;
 
+  console.log('Login tentative:', nom, prenom, '| Admin attendu:', adminNom, adminPrenom);
   if (nom.trim().toLowerCase() === adminNom.toLowerCase() &&
       prenom.trim().toLowerCase() === adminPrenom.toLowerCase()) {
-    if (password !== adminPwd)
+    if (password !== adminPwd) {
+      console.log('Mot de passe admin incorrect');
       return res.status(401).json({ error: 'Mot de passe incorrect.' });
+    }
 
     let admin = db.get('SELECT * FROM users WHERE is_admin = 1');
     if (!admin) {

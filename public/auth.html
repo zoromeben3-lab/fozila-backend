@@ -126,7 +126,7 @@
         </div>
         <div class="field-wrap">
           <label>Numéro de téléphone</label>
-          <input type="tel" id="r-phone" placeholder="ex: 07 00 00 00 00"
+          <input type="tel" id="r-phone" placeholder="+226 00 00 00 00"
             oninput="valPhone('r-phone','r-phone-msg','r-phone-st')"/>
           <span class="field-status" id="r-phone-st"></span>
           <div class="field-msg" id="r-phone-msg"></div>
@@ -205,7 +205,7 @@
 
     function valPhone(id, msgId, stId) {
       const v  = document.getElementById(id).value.trim();
-      const ok = /^[\d\s+\-()]{8,15}$/.test(v);
+      const ok = /^[\d\s+\-()]{8,20}$/.test(v);
       document.getElementById(id).className     = v ? (ok ? 'valid' : 'invalid') : '';
       document.getElementById(stId).textContent = v ? (ok ? '✅' : '❌') : '';
       const m = document.getElementById(msgId);
