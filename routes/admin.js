@@ -44,4 +44,20 @@ router.put('/withdrawals/:id', (req, res) => {
   res.json({ message: 'Statut mis à jour.', status });
 });
 
+// Toutes les annonces avec IDs
+router.get('/announcements', (req, res) => {
+  const list = db.all('SELECT * FROM announcements WHERE is_active=1 ORDER BY id DESC');
+  res.json(list);
+});
+
+// Toutes les annonces avec IDs (singles)
+router.get('/singles', (req, res) => {
+  res.json(db.all('SELECT * FROM singles ORDER BY created_at DESC'));
+});
+
+// Tous les albums
+router.get('/albums', (req, res) => {
+  res.json(db.all('SELECT * FROM albums ORDER BY created_at DESC'));
+});
+
 module.exports = router;
