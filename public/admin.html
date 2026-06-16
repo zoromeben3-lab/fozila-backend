@@ -618,16 +618,18 @@ async function saveAlbum(draft) {
   formData.append('is_active',   draft ? '0' : '1');
   const coverFile = document.getElementById('al-cover-input') ? document.getElementById('al-cover-input').files[0] : null;
   if (coverFile) formData.append('cover', coverFile);
+  // Lire les fichiers audio AVANT la requête (évite la perte sur mobile)
+  const audioInput = document.getElementById('al-audio-file');
+  const audioFilesList = audioInput ? Array.from(audioInput.files) : [];
   try {
     const res  = await fetch(FOZILA.API+'/albums', { method:'POST', headers:{'Authorization':'Bearer '+FOZILA.getToken()}, body:formData });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     // Upload tous les MP3 en une seule requête
-    const audioFiles = document.getElementById('al-audio-file').files;
-    if (audioFiles.length && data.album) {
+    if (audioFilesList.length && data.album) {
       const af = new FormData();
-      for (let i = 0; i < audioFiles.length; i++) {
-        af.append('audio', audioFiles[i]);
+      for (let i = 0; i < audioFilesList.length; i++) {
+        af.append('audio', audioFilesList[i]);
       }
       const audioRes = await fetch(FOZILA.API+'/albums/'+data.album.id+'/audio', {
         method: 'PUT',
