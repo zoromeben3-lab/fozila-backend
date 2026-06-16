@@ -156,8 +156,8 @@ const FOZILA = {
       </div>
       <div class="nav-actions">
         ${user ? `
-          <a href="dashboard.html" class="btn-ghost ${activePage==='dashboard'?'active':''}">👤 Mon espace</a>
-          ${user.isAdmin ? `<a href="admin.html" class="btn-primary">⚙️ Admin</a>` : ''}
+          <a href="dashboard.html" class="btn-ghost ${activePage==='dashboard'?'active':''}">Mon espace</a>
+          ${user.isAdmin ? `<a href="admin.html" class="btn-primary">Admin</a>` : ''}
           <button class="btn-ghost" onclick="FOZILA.logout()">Sortir</button>
         ` : `
           <a href="auth.html" class="btn-ghost">Connexion</a>
@@ -174,8 +174,8 @@ const FOZILA = {
         <a href="index.html#comment-ca-marche" class="mobile-link">Comment ça marche</a>
         <hr style="border-color:rgba(255,255,255,0.07);margin:8px 0;">
         ${user ? `
-          <a href="dashboard.html" class="mobile-link">👤 Mon espace</a>
-          ${user.isAdmin ? `<a href="admin.html" class="mobile-link" style="color:#A78BFA;">⚙️ Admin</a>` : ''}
+          <a href="dashboard.html" class="mobile-link">Mon espace</a>
+          ${user.isAdmin ? `<a href="admin.html" class="mobile-link" style="color:#A78BFA;">Admin</a>` : ''}
           <button class="mobile-link" onclick="FOZILA.logout()" style="background:none;border:none;color:#ef4444;text-align:left;font-family:inherit;font-size:14px;cursor:pointer;padding:10px 0;">Déconnexion</button>
         ` : `
           <a href="auth.html" class="mobile-link">Connexion</a>
@@ -205,7 +205,7 @@ const FOZILA = {
           <div class="sd-art" style="background:${item.grad}">${item.emoji}</div>
           <div class="sd-info">
             <div class="sd-title">${item.title}</div>
-            <div class="sd-meta">${item._type==='album'?'💿 Album':'🎵 Single'} · ${item.genre}</div>
+            <div class="sd-meta">${item._type==='album'?'Album':'Single'} · ${item.genre}</div>
           </div>
           <div class="sd-price">${FOZILA.fmt(item.price)}</div>
         </a>

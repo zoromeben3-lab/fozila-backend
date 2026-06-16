@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fôzila — Mon espace</title>
+  <title>Fôliza — Mon espace</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="fozila.css"/>
   <style>
@@ -38,9 +38,9 @@
 
     <!-- ONGLETS -->
     <div class="dash-tabs">
-      <button class="dash-tab active" onclick="switchTab('library')">🎵 Ma bibliothèque</button>
-      <button class="dash-tab" onclick="switchTab('history')">🧾 Historique</button>
-      <button class="dash-tab" onclick="switchTab('settings')">⚙️ Paramètres</button>
+      <button class="dash-tab active" onclick="switchTab('library')">Ma bibliothèque</button>
+      <button class="dash-tab" onclick="switchTab('history')">Historique</button>
+      <button class="dash-tab" onclick="switchTab('settings')">Paramètres</button>
     </div>
 
     <!-- MA BIBLIOTHÈQUE -->
@@ -100,11 +100,11 @@
 
       // PROFIL
       document.getElementById('profile-header').innerHTML = `
-        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--v),#4c1d95);display:flex;align-items:center;justify-content:center;font-size:28px;border:3px solid var(--v-border);">👤</div>
+        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--v),#4c1d95);display:flex;align-items:center;justify-content:center;font-size:28px;border:3px solid var(--v-border);"></div>
         <div>
           <h1 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:3px;" id="dash-name">${user.name}</h1>
           <p style="color:var(--muted);font-size:13px;margin-bottom:10px;">${user.email}</p>
-          <span style="background:var(--v-dim);border:1px solid var(--v-border);color:var(--v-light);padding:3px 12px;border-radius:100px;font-size:11px;font-weight:600;">Membre Fozila</span>
+          <span style="background:var(--v-dim);border:1px solid var(--v-border);color:var(--v-light);padding:3px 12px;border-radius:100px;font-size:11px;font-weight:600;">Membre Fôliza</span>
         </div>
       `;
 
@@ -120,7 +120,7 @@
       const libGrid = document.getElementById('lib-albums');
       if (!purchases.length) {
         libGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">
-          <div style="font-size:48px;margin-bottom:12px;">🎵</div>
+          
           <p style="margin-bottom:16px;">Votre bibliothèque est vide.</p>
           <a href="albums.html" class="btn-primary">Parcourir les albums</a>
         </div>`;
@@ -131,7 +131,7 @@
               ${p.item?.cover_path ? `<img src="${p.item.cover_path}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : (p.item?.emoji||'🎵')}
             </div>
             <div class="ttl">${p.item?.title || 'Article'}</div>
-            <div class="prc">${p.item_type==='album'?'💿 Album':'🎵 Single'} · ${FOZILA.fmt(p.amount)}</div>
+            <div class="prc">${p.item_type==='album'?'Album':'Single'} · ${FOZILA.fmt(p.amount)}</div>
             <button class="btn-green" style="width:100%;padding:6px;font-size:11px;border-radius:6px;"
               onclick="FOZILA.download('${p.download_token}')">⬇️ Télécharger</button>
           </div>
@@ -148,7 +148,7 @@
             <div class="history-icon" style="background:${p.item?.grad||'var(--card2)'};">${p.item?.emoji||'🎵'}</div>
             <div style="flex:1;">
               <div style="font-size:14px;font-weight:600;">${p.item?.title||'Article'}</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px;">${p.item_type==='album'?'💿 Album':'🎵 Single'} · ${FOZILA.timeAgo(p.purchased_at)}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">${p.item_type==='album'?'Album':'Single'} · ${FOZILA.timeAgo(p.purchased_at)}</div>
             </div>
             <div style="text-align:right;">
               <div style="font-size:14px;font-weight:700;color:var(--v-light);">${FOZILA.fmt(p.amount)}</div>
@@ -170,7 +170,7 @@
         await FOZILA.api('PUT', '/auth/me', { name, password: pwd || undefined });
         user.name = name;
         localStorage.setItem('fozila_user', JSON.stringify(user));
-        FOZILA.toast('✓ Profil mis à jour !', 'success');
+        FOZILA.toast('Profil mis à jour', 'success');
         document.getElementById('dash-name').textContent = name;
       } catch(err) {
         FOZILA.toast(err.message || 'Erreur mise à jour', 'error');

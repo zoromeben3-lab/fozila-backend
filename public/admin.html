@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fôzila — Administration</title>
+<title>Fôliza — Administration</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#08080d;--surface:#101018;--surface2:#18181f;--border:rgba(255,255,255,0.07);--v:#7C3AED;--v-light:#A78BFA;--v-dim:rgba(124,58,237,0.12);--v-border:rgba(124,58,237,0.3);--text:#f0ede8;--muted:#6b6880;--green:#2dd4a0;--red:#e84c4c;--gold:#f0a500;--radius:14px;--radius-sm:8px;}
@@ -180,8 +180,8 @@ body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url('bg
 <div class="mobile-nav-overlay" id="mobile-nav-overlay" onclick="closeMobileNav()"></div>
 <div class="mobile-nav" id="mobile-nav">
   <button class="mobile-nav-item" onclick="mobileGo('dashboard')">📊 Tableau de bord</button>
-  <button class="mobile-nav-item" onclick="mobileGo('albums')">💿 Albums</button>
-  <button class="mobile-nav-item" onclick="mobileGo('singles')">🎵 Singles</button>
+  <button class="mobile-nav-item" onclick="mobileGo('albums')">Albums</button>
+  <button class="mobile-nav-item" onclick="mobileGo('singles')">Singles</button>
   <button class="mobile-nav-item" onclick="mobileGo('featured')">⭐ En vedette</button>
   <button class="mobile-nav-item" onclick="mobileGo('users')">👥 Utilisateurs</button>
   <button class="mobile-nav-item" onclick="mobileGo('announce')">📢 Annonces</button>
@@ -200,15 +200,15 @@ body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url('bg
     </div>
   </div>
   <div class="sb-profile">
-    <div class="profile-av">👑<div class="online-dot"></div></div>
+    <div class="profile-av"><div class="online-dot"></div></div>
     <div class="sb-name">Administrateur</div>
     <div class="sb-role">Accès total</div>
   </div>
   <div class="nav-section">
     <div class="nav-lbl">Principal</div>
     <button class="nav-item active" onclick="showPage('dashboard')">📊 Tableau de bord</button>
-    <button class="nav-item" onclick="showPage('albums')">💿 Albums</button>
-    <button class="nav-item" onclick="showPage('singles')">🎵 Singles</button>
+    <button class="nav-item" onclick="showPage('albums')">Albums</button>
+    <button class="nav-item" onclick="showPage('singles')">Singles</button>
     <button class="nav-item" onclick="showPage('featured')">⭐ En vedette</button>
   </div>
   <div class="nav-section">
@@ -233,7 +233,7 @@ body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url('bg
     <div style="display:flex;gap:9px;align-items:center;">
       <span style="font-size:0.75rem;color:var(--muted);" id="live-time"></span>
       <a href="index.html" target="_blank" class="btn btn-outline btn-sm">← Boutique</a>
-      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--v),#4c1d95);display:flex;align-items:center;justify-content:center;">👑</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--v),#4c1d95);display:flex;align-items:center;justify-content:center;"></div>
     </div>
   </div>
 
@@ -303,8 +303,8 @@ body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url('bg
     <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:6px;">⭐ Contenus en <em style="color:var(--v-light);font-style:normal;">vedette</em></h2>
     <p style="color:var(--muted);font-size:0.82rem;margin-bottom:1.4rem;">Les contenus en vedette apparaissent mis en avant sur la page d'accueil.</p>
     <div class="grid-2">
-      <div class="panel"><div class="panel-hdr"><div class="panel-ttl">💿 Albums <em>en vedette</em></div></div><div id="feat-albums"></div></div>
-      <div class="panel"><div class="panel-hdr"><div class="panel-ttl">🎵 Singles <em>en vedette</em></div></div><div id="feat-singles"></div></div>
+      <div class="panel"><div class="panel-hdr"><div class="panel-ttl">Albums <em>en vedette</em></div></div><div id="feat-albums"></div></div>
+      <div class="panel"><div class="panel-hdr"><div class="panel-ttl">Singles <em>en vedette</em></div></div><div id="feat-singles"></div></div>
     </div>
   </div>
 
@@ -372,7 +372,7 @@ body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url('bg
     <div class="field"><label>Tag (optionnel)</label><input type="text" id="al-tag" placeholder="Nouveau, Populaire…"></div>
     <div class="field"><label>🎵 Fichiers MP3 des titres (sélection multiple)</label>
       <div class="upload-zone" id="al-audio-zone" onclick="document.getElementById('al-audio-file').click()">
-        <input type="file" id="al-audio-file" accept="audio/*,.mp3,.wav" multiple style="display:none;position:absolute;" onchange="handleMultiAudio(this)">
+        <input type="file" id="al-audio-file" accept="audio/*,.mp3,.wav,.m4a,.ogg,*/*" multiple style="display:none;position:absolute;" onchange="handleMultiAudio(this)">
         <div class="upload-icon">🎵</div>
         <p>Cliquez pour sélectionner les MP3</p>
         <div class="hint">MP3 ou WAV · Sélection multiple · Max 100 Mo chacun</div>
@@ -408,7 +408,7 @@ body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url('bg
     <div class="field"><label>Description</label><textarea id="edit-al-desc"></textarea></div>
     <div class="field"><label>🎵 Remplacer le fichier audio (optionnel)</label>
       <div class="upload-zone" id="edit-al-audio-zone" onclick="document.getElementById('edit-al-audio-file').click()" style="cursor:pointer;">
-        <input type="file" id="edit-al-audio-file" accept="audio/*,.mp3,.wav" multiple style="display:none;position:absolute;" onchange="handleMultiAudio2(this,'edit-al-audio-zone','edit-al-audio-name')">
+        <input type="file" id="edit-al-audio-file" accept="audio/*,.mp3,.wav,.m4a,.ogg,*/*" multiple style="display:none;position:absolute;" onchange="handleMultiAudio2(this,'edit-al-audio-zone','edit-al-audio-name')">
         <div class="upload-icon">🎵</div><p>Nouveau fichier audio</p><div class="hint">MP3, WAV ou ZIP</div>
       </div>
       <div id="edit-al-audio-name" style="font-size:0.75rem;color:var(--green);margin-top:5px;display:none;"></div>
@@ -646,7 +646,7 @@ async function saveAlbum(draft) {
     const zone = document.getElementById('al-audio-zone'); if(zone) { zone.querySelector('p').textContent='Cliquez pour sélectionner les MP3'; zone.style.borderColor=''; }
     const lst  = document.getElementById('al-audio-list'); if(lst) lst.innerHTML='';
     closeModal('m-add-album');
-    toast(draft ? '💾 Brouillon sauvegardé' : '🚀 Album publié !', 'success');
+    toast(draft ? 'Brouillon sauvegardé' : 'Album publié !', 'success');
     renderAlbums(); renderDash();
   } catch(err) { toast(err.message || 'Erreur création album', 'error'); }
 }
@@ -798,7 +798,7 @@ async function saveSingle(draft) {
     if (zoneEl) { zoneEl.querySelector('p').textContent = 'Cliquez ou glissez le fichier MP3'; zoneEl.style.borderColor = ''; }
 
     closeModal('m-add-single');
-    if (!audioFile) toast(draft ? '💾 Brouillon sauvegardé' : '🚀 Single publié !', 'success');
+    if (!audioFile) toast(draft ? 'Brouillon sauvegardé' : 'Single publié !', 'success');
     renderSingles();
   } catch(err) { toast(err.message || 'Erreur création single', 'error'); }
 }
@@ -1032,7 +1032,7 @@ async function renderWithdrawals() {
     document.getElementById('withdraw-list').innerHTML = ws.length
       ? ws.map(w=>`
         <div class="withdraw-row">
-          <div style="font-size:1.1rem;">${w.method.includes('Orange')?'🟠':w.method.includes('MTN')?'🟡':w.method.includes('Moov')?'🔵':'🏦'}</div>
+          <div style="font-size:1.1rem;">${w.method.includes('Orange')?'':w.method.includes('MTN')?'🟡':w.method.includes('Moov')?'':'🏦'}</div>
           <div style="flex:1;">
             <div style="font-size:0.88rem;font-weight:600;">${FOZILA.fmt(w.amount)} — ${w.method}</div>
             <div style="font-size:0.72rem;color:var(--muted);">${w.phone} · ${new Date(w.created_at).toLocaleDateString('fr-FR')}</div>

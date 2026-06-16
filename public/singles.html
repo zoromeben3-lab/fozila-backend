@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fôzila — Singles</title>
+  <title>Fôliza — Singles</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="fozila.css"/>
   <style>
@@ -57,10 +57,10 @@
       <h3 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px;">Acheter ce single</h3>
       <p style="color:var(--muted);font-size:13px;margin-bottom:24px;" id="bsm-name"></p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
-        <div class="pay-method selected" data-m="orange" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;">🟠</div><div style="font-size:12px;">Orange Money</div></div>
-        <div class="pay-method" data-m="moov" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;">🔵</div><div style="font-size:12px;">Moov Money</div></div>
-        <div class="pay-method" data-m="wave" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;">💙</div><div style="font-size:12px;">Wave</div></div>
-        <div class="pay-method" data-m="card" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;">💳</div><div style="font-size:12px;">Carte bancaire</div></div>
+        <div class="pay-method selected" data-m="orange" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;"></div><div style="font-size:12px;">Orange Money</div></div>
+        <div class="pay-method" data-m="moov" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;"></div><div style="font-size:12px;">Moov Money</div></div>
+        <div class="pay-method" data-m="wave" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;"></div><div style="font-size:12px;">Wave</div></div>
+        <div class="pay-method" data-m="card" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;"></div><div style="font-size:12px;">Carte bancaire</div></div>
       </div>
       <div class="form-group"><label>Numéro / Référence</label><input type="text" id="bsm-num" placeholder="ex: 07 00 00 00 00"/></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
@@ -217,7 +217,7 @@
       FOZILA.toast('Paiement en cours…', 'info');
       try {
         await FOZILA.purchase(currentSingleId, 'single', method, num);
-        FOZILA.toast('✓ Single acheté ! Disponible au téléchargement.', 'success');
+        FOZILA.toast('Single acheté — disponible au téléchargement.', 'success');
         await renderSingles();
       } catch(err) {
         FOZILA.toast(err.message || 'Erreur de paiement', 'error');
