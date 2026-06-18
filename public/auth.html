@@ -150,7 +150,6 @@
             oninput="valConfirm()"
             onkeydown="if(event.key==='Enter') doRegister()"/>
           <span class="toggle-pwd" onclick="togglePwd('r-confirm',this)">👁️</span>
-          <span class="field-status" id="r-confirm-st"></span>
           <div class="field-msg" id="r-confirm-msg"></div>
         </div>
         <button class="btn-primary" id="register-btn" onclick="doRegister()">
@@ -240,8 +239,7 @@
       const pwd = document.getElementById('r-pwd').value;
       const con = document.getElementById('r-confirm').value;
       const ok  = con === pwd && con.length > 0;
-      document.getElementById('r-confirm').className     = con ? (ok ? 'valid' : 'invalid') : '';
-      document.getElementById('r-confirm-st').textContent = con ? (ok ? '✅' : '❌') : '';
+      document.getElementById('r-confirm').className = con ? (ok ? 'valid' : 'invalid') : '';
       const m = document.getElementById('r-confirm-msg');
       m.textContent = con && !ok ? 'Les mots de passe ne correspondent pas' : '';
       m.className   = 'field-msg ' + (ok ? 'ok' : 'err');
@@ -251,7 +249,7 @@
     function togglePwd(id, icon) {
       const inp = document.getElementById(id);
       inp.type  = inp.type === 'password' ? 'text' : 'password';
-      icon.textContent = inp.type === 'text' ? '🙈️' : '👁️';
+      icon.textContent = inp.type === 'text' ? '👁️‍🗨️' : '👁️';
     }
 
     // ── CONNEXION ──
