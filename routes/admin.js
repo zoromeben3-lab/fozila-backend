@@ -24,22 +24,22 @@ router.get('/users', (req, res) => {
 
 // Toutes les commandes (avec titre de l'article inclus)
 router.get('/purchases', (req, res) => {
-  const purchases = db.all(`SELECT p.*,u.name as user_name,u.phone as user_phone FROM purchases p JOIN users u ON p.user_id=u.id ORDER BY p.purchased_at DESC`);
+  const purchases = db.all(`SELECT p.*,u.name as user_name,u.phone as user_phone FROM purchases p LEFT JOIN users u ON p.user_id=u.id ORDER BY p.purchased_at DESC`);
   const enriched = purchases.map(p => {
     const table = p.item_type === 'album' ? 'albums' : 'singles';
     const item  = db.get(`SELECT title,emoji FROM ${table} WHERE id=?`, [p.item_id]);
-    return { ...p, item_title: item?.title || 'Article supprimé', item_emoji: item?.emoji || '🎵' };
+    return { ...p, user_name: p.user_name || 'Utilisateur inconnu', item_title: item?.title || 'Article supprimé', item_emoji: item?.emoji || '🎵' };
   });
   res.json(enriched);
 });
 
 // Uniquement les commandes en attente de validation
 router.get('/purchases/pending', (req, res) => {
-  const purchases = db.all(`SELECT p.*,u.name as user_name,u.phone as user_phone FROM purchases p JOIN users u ON p.user_id=u.id WHERE p.status='pending' ORDER BY p.purchased_at ASC`);
+  const purchases = db.all(`SELECT p.*,u.name as user_name,u.phone as user_phone FROM purchases p LEFT JOIN users u ON p.user_id=u.id WHERE p.status='pending' ORDER BY p.purchased_at ASC`);
   const enriched = purchases.map(p => {
     const table = p.item_type === 'album' ? 'albums' : 'singles';
     const item  = db.get(`SELECT title,emoji FROM ${table} WHERE id=?`, [p.item_id]);
-    return { ...p, item_title: item?.title || 'Article supprimé', item_emoji: item?.emoji || '🎵' };
+    return { ...p, user_name: p.user_name || 'Utilisateur inconnu', item_title: item?.title || 'Article supprimé', item_emoji: item?.emoji || '🎵' };
   });
   res.json(enriched);
 });
