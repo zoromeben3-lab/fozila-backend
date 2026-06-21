@@ -567,8 +567,12 @@ const cmdStatusBadge = { pending:'bg', completed:'bl', rejected:'br' };
 
 async function renderCommandes() {
   try {
-    const all = await FOZILA.api('GET', '/admin/purchases');
-    const pending = all.filter(p => p.status === 'pending');
+    const [pending, all] = await Promise.all([
+      FOZILA.api('GET', '/admin/purchases/pending'),
+      FOZILA.api('GET', '/admin/purchases')
+    ]);
+    console.log('Commandes en attente reçues:', pending);
+    console.log('Toutes les commandes reçues:', all);
 
     updatePendingBadge(pending.length);
 
@@ -600,7 +604,11 @@ async function renderCommandes() {
           <td>${p.ticket_number || '—'}</td>
         </tr>`).join('')
       : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px;">Aucune commande.</td></tr>';
-  } catch(err) { toast('Erreur chargement commandes', 'error'); }
+  } catch(err) {
+    console.error('Erreur renderCommandes:', err);
+    toast('Erreur chargement commandes : ' + (err.message || 'inconnue'), 'error');
+    document.getElementById('commandes-pending-list').innerHTML = '<p style="color:var(--red);font-size:0.84rem;text-align:center;padding:28px;">Erreur de chargement. Voir la console (F12).</p>';
+  }
 }
 
 async function validatePurchase(id) {
