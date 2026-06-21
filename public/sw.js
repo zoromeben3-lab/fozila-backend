@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fozila-v3';
+const CACHE_NAME = 'fozila-v4';
 const STATIC_FILES = [
   '/',
   '/index.html',

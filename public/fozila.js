@@ -9,8 +9,17 @@ const FOZILA = {
 
   // ── COORDONNÉES DE PAIEMENT (à modifier ici si le numéro change) ──
   PAYMENT_INFO: {
-    orange_money: { label: 'Orange Money', number: '+226 XX XX XX XX' },
-    moov_money:   { label: 'Moov Money',   number: '+226 XX XX XX XX' },
+    orange_money: { label: 'Orange Money', number: '64050827', ussd: '*144*1*1*{number}*{amount}#' },
+    moov_money:   { label: 'Moov Money',   number: '64050827', ussd: '*144*1*1*{number}*{amount}#' },
+  },
+
+  // Génère le lien tel: avec le code USSD prêt à composer (ouvre le clavier téléphone)
+  ussdLink(method, amount) {
+    const info = this.PAYMENT_INFO[method];
+    if (!info) return '#';
+    const numClean = info.number.replace(/\s+/g, '');
+    const code = info.ussd.replace('{number}', numClean).replace('{amount}', amount);
+    return 'tel:' + code.replace(/#/g, '%23');
   },
 
   // ── APPEL API GÉNÉRIQUE ──

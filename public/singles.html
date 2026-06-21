@@ -212,10 +212,13 @@
 
     function showBsmInstructions(method, price) {
       const info = FOZILA.PAYMENT_INFO[method];
+      const link = FOZILA.ussdLink(method, price);
       document.getElementById('bsm-instructions').innerHTML = `
-        1️⃣ Composez <strong>*144#</strong> sur votre téléphone<br>
-        2️⃣ Envoyez <strong>${FOZILA.fmt(price)}</strong> au numéro <strong style="color:var(--v-light);">${info.number}</strong> (${info.label})<br>
-        3️⃣ Collez ci-dessous l'ID de transaction reçu par SMS`;
+        Envoyez <strong>${FOZILA.fmt(price)}</strong> au <strong style="color:var(--v-light);">${info.number}</strong> (${info.label})<br><br>
+        <a href="${link}" style="display:block;text-align:center;background:var(--v);color:#fff;padding:10px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">📞 Composer le code automatiquement</a>
+        <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;">Sur téléphone, appuyez pour ouvrir le clavier avec le code prérempli</div>
+        <hr style="border-color:var(--border);margin:10px 0;">
+        Puis collez ci-dessous l'ID de transaction reçu par SMS`;
     }
 
     function selectPay(el) {
