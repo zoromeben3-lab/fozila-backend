@@ -7,6 +7,12 @@ const FOZILA = {
 	API: '/api',
   _cache: { albums: null, singles: null, announcements: null },
 
+  // ── COORDONNÉES DE PAIEMENT (à modifier ici si le numéro change) ──
+  PAYMENT_INFO: {
+    orange_money: { label: 'Orange Money', number: '+226 XX XX XX XX' },
+    moov_money:   { label: 'Moov Money',   number: '+226 XX XX XX XX' },
+  },
+
   // ── APPEL API GÉNÉRIQUE ──
   async api(method, endpoint, body = null) {
     const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -55,6 +61,8 @@ const FOZILA = {
     return await this.api('POST', '/purchases', { item_id, item_type, pay_method, pay_ref });
   },
   async getMyPurchases() { return await this.api('GET', '/purchases/my'); },
+  async getMyPendingPurchases() { return await this.api('GET', '/purchases/my/pending'); },
+  async getMyTickets() { return await this.api('GET', '/purchases/my/tickets'); },
   async hasPurchased(item_id, item_type) {
     try { return (await this.api('GET', `/purchases/has/${item_type}/${item_id}`)).owned; }
     catch { return false; }

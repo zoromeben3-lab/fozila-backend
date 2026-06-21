@@ -180,6 +180,7 @@ body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url('bg
 <div class="mobile-nav-overlay" id="mobile-nav-overlay" onclick="closeMobileNav()"></div>
 <div class="mobile-nav" id="mobile-nav">
   <button class="mobile-nav-item" onclick="mobileGo('dashboard')">📊 Tableau de bord</button>
+  <button class="mobile-nav-item" onclick="mobileGo('commandes')">📥 Commandes</button>
   <button class="mobile-nav-item" onclick="mobileGo('albums')">Albums</button>
   <button class="mobile-nav-item" onclick="mobileGo('singles')">Singles</button>
   <button class="mobile-nav-item" onclick="mobileGo('featured')">⭐ En vedette</button>
@@ -207,6 +208,7 @@ body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url('bg
   <div class="nav-section">
     <div class="nav-lbl">Principal</div>
     <button class="nav-item active" onclick="showPage('dashboard')">📊 Tableau de bord</button>
+    <button class="nav-item" onclick="showPage('commandes')">📥 Commandes<span class="nav-badge" id="pending-badge" style="display:none;">0</span></button>
     <button class="nav-item" onclick="showPage('albums')">Albums</button>
     <button class="nav-item" onclick="showPage('singles')">Singles</button>
     <button class="nav-item" onclick="showPage('featured')">⭐ En vedette</button>
@@ -275,6 +277,23 @@ body::after{content:'';position:fixed;inset:0;z-index:0;background-image:url('bg
         <button class="btn btn-primary btn-sm" onclick="openModal('m-add-album')">+ Album</button>
         <button class="btn btn-outline btn-sm" onclick="openModal('m-add-single')">+ Single</button>
       </div>
+    </div>
+  </div>
+
+  <!-- PAGE COMMANDES -->
+  <div id="page-commandes" class="pc" style="display:none;">
+    <div style="margin-bottom:1.4rem;">
+      <div style="font-size:0.68rem;color:var(--v-light);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-bottom:3px;">Validation manuelle</div>
+      <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;">Commandes en <em style="color:var(--v-light);font-style:normal;">attente</em></h2>
+      <p style="color:var(--muted);font-size:0.82rem;margin-top:4px;">Vérifiez votre SMS Orange/Moov Money, comparez le montant et le numéro de dépôt, puis validez ou rejetez.</p>
+    </div>
+    <div class="panel" id="commandes-pending-wrap">
+      <div class="panel-hdr"><div class="panel-ttl">⏳ En attente</div></div>
+      <div id="commandes-pending-list"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-hdr"><div class="panel-ttl">📋 Historique des <em>commandes</em></div></div>
+      <table class="table"><thead><tr><th>Client</th><th>Article</th><th>Montant</th><th>Dépôt</th><th>Statut</th><th>Ticket</th></tr></thead><tbody id="commandes-history-tbody"></tbody></table>
     </div>
   </div>
 
@@ -532,14 +551,81 @@ setInterval(() => {
 }, 1000);
 
 // ── PAGE NAVIGATION ──
-const pageTitles = { dashboard:'Tableau de <em>bord</em>', albums:'Gestion des <em>Albums</em>', singles:'Singles & <em>Titres</em>', featured:'Contenus en <em>vedette</em>', users:'<em>Utilisateurs</em>', announce:'Barre d\'<em>annonces</em>', withdrawals:'Retraits & <em>Revenus</em>', stats:'<em>Statistiques</em>' };
+const pageTitles = { dashboard:'Tableau de <em>bord</em>', commandes:'Commandes en <em>attente</em>', albums:'Gestion des <em>Albums</em>', singles:'Singles & <em>Titres</em>', featured:'Contenus en <em>vedette</em>', users:'<em>Utilisateurs</em>', announce:'Barre d\'<em>annonces</em>', withdrawals:'Retraits & <em>Revenus</em>', stats:'<em>Statistiques</em>' };
 function showPage(id) {
   document.querySelectorAll('.pc').forEach(p => p.style.display = 'none');
   document.getElementById('page-' + id).style.display = 'block';
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.textContent.toLowerCase().includes(id.slice(0,4))));
   document.getElementById('page-title').innerHTML = pageTitles[id] || id;
-  const fn = { albums:renderAlbums, singles:renderSingles, users:renderUsers, announce:renderAnn, featured:renderFeatured, stats:renderStats, withdrawals:renderWithdrawals, dashboard:renderDash };
+  const fn = { albums:renderAlbums, singles:renderSingles, users:renderUsers, announce:renderAnn, featured:renderFeatured, stats:renderStats, withdrawals:renderWithdrawals, dashboard:renderDash, commandes:renderCommandes };
   if (fn[id]) Promise.resolve(fn[id]()).catch(e => console.error(e));
+}
+
+// ── COMMANDES (validation manuelle des paiements) ──
+const cmdStatusLabel = { pending:'⏳ En attente', completed:'✅ Validé', rejected:'❌ Rejeté' };
+const cmdStatusBadge = { pending:'bg', completed:'bl', rejected:'br' };
+
+async function renderCommandes() {
+  try {
+    const all = await FOZILA.api('GET', '/admin/purchases');
+    const pending = all.filter(p => p.status === 'pending');
+
+    updatePendingBadge(pending.length);
+
+    document.getElementById('commandes-pending-list').innerHTML = pending.length
+      ? pending.map(p => `
+        <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+          <div class="chip-art" style="background:var(--v-dim);font-size:1rem;">${p.item_emoji||'🎵'}</div>
+          <div style="flex:1;min-width:160px;">
+            <div style="font-weight:600;font-size:0.86rem;">${p.item_title}</div>
+            <div style="font-size:0.72rem;color:var(--muted);">${p.user_name} · ${p.user_phone||''} · ${FOZILA.timeAgo(p.purchased_at)}</div>
+            <div style="font-size:0.74rem;color:var(--v-light);margin-top:2px;">Dépôt : <strong>${p.pay_ref}</strong> (${p.pay_method})</div>
+          </div>
+          <span class="price-pill">${FOZILA.fmt(p.amount)}</span>
+          <div class="act">
+            <button class="btn btn-green btn-sm" onclick="validatePurchase(${p.id})">✓ Valider</button>
+            <button class="btn btn-danger btn-sm" onclick="rejectPurchase(${p.id})">✕ Rejeter</button>
+          </div>
+        </div>`).join('')
+      : '<p style="color:var(--muted);font-size:0.84rem;text-align:center;padding:28px;">Aucune commande en attente. 🎉</p>';
+
+    document.getElementById('commandes-history-tbody').innerHTML = all.length
+      ? all.map(p => `
+        <tr>
+          <td><div class="chip-title" style="font-size:0.8rem;">${p.user_name}</div><div class="chip-sub">${p.user_phone||''}</div></td>
+          <td>${p.item_emoji||'🎵'} ${p.item_title}</td>
+          <td><span class="price-pill">${FOZILA.fmt(p.amount)}</span></td>
+          <td style="font-size:0.74rem;">${p.pay_ref||'—'}</td>
+          <td><span class="badge ${cmdStatusBadge[p.status]||'bd'}">${cmdStatusLabel[p.status]||p.status}</span></td>
+          <td>${p.ticket_number || '—'}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px;">Aucune commande.</td></tr>';
+  } catch(err) { toast('Erreur chargement commandes', 'error'); }
+}
+
+async function validatePurchase(id) {
+  if (!confirm('Confirmer que le paiement a bien été reçu ?')) return;
+  try {
+    const data = await FOZILA.api('PUT', `/admin/purchases/${id}/validate`);
+    toast('✓ Validé — ticket ' + data.ticket_number, 'success');
+    renderCommandes(); renderDash();
+  } catch(err) { toast(err.message || 'Erreur validation', 'error'); }
+}
+
+async function rejectPurchase(id) {
+  if (!confirm('Rejeter cette commande ? Le client devra recommencer.')) return;
+  try {
+    await FOZILA.api('PUT', `/admin/purchases/${id}/reject`);
+    toast('Commande rejetée', 'success');
+    renderCommandes();
+  } catch(err) { toast(err.message || 'Erreur rejet', 'error'); }
+}
+
+function updatePendingBadge(count) {
+  const badge = document.getElementById('pending-badge');
+  if (!badge) return;
+  if (count > 0) { badge.textContent = count; badge.style.display = 'inline-block'; }
+  else { badge.style.display = 'none'; }
 }
 
 // ── COVER HANDLER ──
@@ -1107,6 +1193,7 @@ async function renderDash() {
       : '<p style="color:var(--muted);font-size:0.82rem;padding:12px 0;">Aucun achat récent.</p>';
 
     document.getElementById('visitor-count-display').textContent = FOZILA.getVisitors().toLocaleString('fr-FR');
+    updatePendingBadge(stats.pendingCount || 0);
   } catch(err) { console.error(err); toast('Erreur chargement dashboard','error'); }
 }
 

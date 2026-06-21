@@ -103,17 +103,16 @@
       <h3 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px;">💳 Paiement</h3>
       <p style="color:var(--muted);font-size:13px;margin-bottom:22px;" id="pay-album-name"></p>
       <div class="pay-methods">
-        <div class="pay-method selected" onclick="selectPay(this)"><div class="ico">🟠</div>Orange Money</div>
-        <div class="pay-method" onclick="selectPay(this)"><div class="ico">🔵</div>Moov Money</div>
-        <div class="pay-method" onclick="selectPay(this)"><div class="ico">💙</div>Wave</div>
-        <div class="pay-method" onclick="selectPay(this)"><div class="ico">💳</div>Carte bancaire</div>
+        <div class="pay-method selected" data-m="orange_money" onclick="selectPay(this)"><div class="ico">🟠</div>Orange Money</div>
+        <div class="pay-method" data-m="moov_money" onclick="selectPay(this)"><div class="ico">🔵</div>Moov Money</div>
       </div>
-      <div class="form-group"><label>Numéro / Référence</label><input type="text" id="pay-number" placeholder="ex: 07 00 00 00 00"/></div>
+      <div id="pay-instructions" style="background:var(--card2);border:1px solid var(--v-border);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6;"></div>
+      <div class="form-group"><label>Numéro de dépôt (ID de transaction reçu par SMS)</label><input type="text" id="pay-number" placeholder="ex: MP240617.1234.A56789"/></div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--border);margin-top:8px;">
         <span style="color:var(--muted);font-size:13px;">Total à payer :</span>
         <span style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--v-light);" id="pay-price"></span>
       </div>
-      <button class="btn-primary" style="width:100%;padding:13px;font-size:15px;margin-top:4px;" onclick="confirmPayment()">Confirmer le paiement</button>
+      <button class="btn-primary" style="width:100%;padding:13px;font-size:15px;margin-top:4px;" onclick="confirmPayment()">J'ai envoyé le paiement</button>
     </div>
   </div>
 
@@ -229,6 +228,7 @@
     function selectPay(el) {
       document.querySelectorAll('.pay-method').forEach(m => m.classList.remove('selected'));
       el.classList.add('selected');
+      showPayInstructions(el.dataset.m);
     }
 
     // ── RENDU PAGE ──
@@ -241,7 +241,12 @@
         return;
       }
       document.title = 'Fôzila — ' + album.title;
-      const owned = user ? await FOZILA.hasPurchased(album.id, 'album') : false;
+      let owned = false, pending = false;
+      if (user) {
+        const status = await FOZILA.api('GET', `/purchases/has/album/${album.id}`).catch(() => ({}));
+        owned = !!status.owned;
+        pending = !!status.pending;
+      }
 
       // Charger les vrais titres depuis la DB
       let apiTracks = [];
@@ -274,7 +279,10 @@
           <div class="price-block">
             ${owned ? `
               <div style="color:var(--green);font-size:13px;font-weight:700;margin-bottom:10px;">✓ Album acheté — accès complet</div>
-              <button class="btn-green" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" onclick="FOZILA.toast('⬇️ Téléchargement de l\\'album complet…','success')">⬇️ Télécharger l'album complet</button>
+              <button class="btn-green" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" onclick="downloadAlbum()">⬇️ Télécharger l'album complet</button>
+            ` : pending ? `
+              <div style="color:var(--gold,#f0a500);font-size:13px;font-weight:700;margin-bottom:10px;">⏳ Demande en attente de validation</div>
+              <button class="btn-outline" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" disabled>En attente de confirmation du paiement</button>
             ` : `
               <div class="price-big">${FOZILA.fmt(album.price)}</div>
               <button class="btn-primary" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" onclick="openPayModal()">🛒 Acheter cet album</button>
@@ -323,21 +331,30 @@
       if (!FOZILA.getUser()) { FOZILA.toast('Connectez-vous pour acheter', 'error'); setTimeout(()=>location.href='auth.html?redirect='+encodeURIComponent(location.href),1400); return; }
       document.getElementById('pay-album-name').textContent = album.title;
       document.getElementById('pay-price').textContent = FOZILA.fmt(album.price);
+      showPayInstructions('orange_money');
       document.getElementById('pay-modal').classList.remove('hidden');
+    }
+
+    function showPayInstructions(method) {
+      const info = FOZILA.PAYMENT_INFO[method];
+      document.getElementById('pay-instructions').innerHTML = `
+        1️⃣ Composez <strong>*144#</strong> sur votre téléphone<br>
+        2️⃣ Envoyez <strong>${FOZILA.fmt(album.price)}</strong> au numéro <strong style="color:var(--v-light);">${info.number}</strong> (${info.label})<br>
+        3️⃣ Collez ci-dessous l'ID de transaction reçu par SMS`;
     }
 
     async function confirmPayment() {
       const num    = document.getElementById('pay-number').value.trim();
-      const method = document.querySelector('.pay-method.selected')?.textContent?.trim().toLowerCase().replace(' ','_') || 'orange_money';
-      if (!num) { FOZILA.toast('Entrez votre numéro de paiement', 'error'); return; }
+      const method = document.querySelector('.pay-method.selected')?.dataset.m || 'orange_money';
+      if (!num) { FOZILA.toast('Entrez le numéro de dépôt reçu par SMS', 'error'); return; }
       document.getElementById('pay-modal').classList.add('hidden');
-      FOZILA.toast('⏳ Paiement en cours de traitement…', 'info');
+      FOZILA.toast('⏳ Envoi de la demande…', 'info');
       try {
         await FOZILA.purchase(album.id, 'album', method, num);
-        FOZILA.toast('✅ Paiement validé ! Album disponible.', 'success');
-        setTimeout(() => location.reload(), 1500);
+        FOZILA.toast('✅ Demande envoyée ! En attente de validation par l\'administrateur.', 'success');
+        setTimeout(() => location.reload(), 1800);
       } catch(err) {
-        FOZILA.toast(err.message || 'Erreur de paiement', 'error');
+        FOZILA.toast(err.message || 'Erreur lors de la demande', 'error');
       }
     }
 

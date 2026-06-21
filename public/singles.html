@@ -56,18 +56,17 @@
       <button class="modal-close" onclick="document.getElementById('buy-single-modal').classList.add('hidden')">✕</button>
       <h3 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px;">Acheter ce single</h3>
       <p style="color:var(--muted);font-size:13px;margin-bottom:24px;" id="bsm-name"></p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
-        <div class="pay-method selected" data-m="orange" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;"></div><div style="font-size:12px;">Orange Money</div></div>
-        <div class="pay-method" data-m="moov" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;"></div><div style="font-size:12px;">Moov Money</div></div>
-        <div class="pay-method" data-m="wave" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;"></div><div style="font-size:12px;">Wave</div></div>
-        <div class="pay-method" data-m="card" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;"></div><div style="font-size:12px;">Carte bancaire</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div class="pay-method selected" data-m="orange_money" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;">🟠</div><div style="font-size:12px;">Orange Money</div></div>
+        <div class="pay-method" data-m="moov_money" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;">🔵</div><div style="font-size:12px;">Moov Money</div></div>
       </div>
-      <div class="form-group"><label>Numéro / Référence</label><input type="text" id="bsm-num" placeholder="ex: 07 00 00 00 00"/></div>
+      <div id="bsm-instructions" style="background:var(--card2);border:1px solid var(--v-border);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6;"></div>
+      <div class="form-group"><label>Numéro de dépôt (ID de transaction reçu par SMS)</label><input type="text" id="bsm-num" placeholder="ex: MP240617.1234.A56789"/></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
         <span style="color:var(--muted);font-size:13px;">Total :</span>
         <span style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--v-light);" id="bsm-price"></span>
       </div>
-      <button class="btn-primary" style="width:100%;margin-top:18px;padding:13px;" onclick="confirmSinglePayment()">Confirmer le paiement</button>
+      <button class="btn-primary" style="width:100%;margin-top:18px;padding:13px;" onclick="confirmSinglePayment()">J'ai envoyé le paiement</button>
     </div>
   </div>
 
@@ -92,11 +91,14 @@
       allSingles = await FOZILA.getSingles();
       const grid = document.getElementById('singles-grid');
 
-      const owned = _user
-        ? await Promise.all(allSingles.map(s => FOZILA.hasPurchased(s.id, 'single')))
-        : allSingles.map(() => false);
+      const statuses = _user
+        ? await Promise.all(allSingles.map(s => FOZILA.api('GET', `/purchases/has/single/${s.id}`).catch(() => ({}))))
+        : allSingles.map(() => ({}));
 
-      grid.innerHTML = allSingles.map((s, i) => `
+      grid.innerHTML = allSingles.map((s, i) => {
+        const owned   = !!statuses[i].owned;
+        const pending = !!statuses[i].pending;
+        return `
         <div class="single-card">
           <div class="single-cover" style="background:${s.grad}">
             ${s.cover_path ? `<img src="${s.cover_path}" style="width:100%;height:100%;object-fit:cover;">` : s.emoji}
@@ -111,14 +113,17 @@
               </button>
             </div>
             <div class="single-footer">
-              <span style="font-size:14px;font-weight:700;color:var(--v-light);">${owned[i] ? '✓ Acheté' : FOZILA.fmt(s.price)}</span>
-              ${owned[i]
+              <span style="font-size:14px;font-weight:700;color:${pending?'#f0a500':'var(--v-light)'};">${owned ? '✓ Acheté' : pending ? '⏳ En attente' : FOZILA.fmt(s.price)}</span>
+              ${owned
                 ? `<button onclick="downloadSingle(${s.id})" class="btn-buy">⬇️</button>`
+                : pending
+                ? `<button class="btn-buy" disabled style="opacity:0.5;">⏳</button>`
                 : `<button onclick="openBuySingle(${s.id})" class="btn-buy">Acheter</button>`
               }
             </div>
           </div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
     }
 
     async function downloadSingle(id) {
@@ -201,26 +206,37 @@
       const s = allSingles.find(x => x.id === id);
       document.getElementById('bsm-name').textContent = s.title;
       document.getElementById('bsm-price').textContent = FOZILA.fmt(s.price);
+      showBsmInstructions('orange_money', s.price);
       document.getElementById('buy-single-modal').classList.remove('hidden');
+    }
+
+    function showBsmInstructions(method, price) {
+      const info = FOZILA.PAYMENT_INFO[method];
+      document.getElementById('bsm-instructions').innerHTML = `
+        1️⃣ Composez <strong>*144#</strong> sur votre téléphone<br>
+        2️⃣ Envoyez <strong>${FOZILA.fmt(price)}</strong> au numéro <strong style="color:var(--v-light);">${info.number}</strong> (${info.label})<br>
+        3️⃣ Collez ci-dessous l'ID de transaction reçu par SMS`;
     }
 
     function selectPay(el) {
       document.querySelectorAll('.pay-method').forEach(m => m.classList.remove('selected'));
       el.classList.add('selected');
+      const s = allSingles.find(x => x.id === currentSingleId);
+      showBsmInstructions(el.dataset.m, s.price);
     }
 
     async function confirmSinglePayment() {
       const num    = document.getElementById('bsm-num').value.trim();
       const method = document.querySelector('.pay-method.selected')?.dataset.m || 'orange_money';
-      if (!num) { FOZILA.toast('Entrez votre numéro', 'error'); return; }
+      if (!num) { FOZILA.toast('Entrez le numéro de dépôt reçu par SMS', 'error'); return; }
       document.getElementById('buy-single-modal').classList.add('hidden');
-      FOZILA.toast('Paiement en cours…', 'info');
+      FOZILA.toast('⏳ Envoi de la demande…', 'info');
       try {
         await FOZILA.purchase(currentSingleId, 'single', method, num);
-        FOZILA.toast('Single acheté — disponible au téléchargement.', 'success');
+        FOZILA.toast('✅ Demande envoyée ! En attente de validation.', 'success');
         await renderSingles();
       } catch(err) {
-        FOZILA.toast(err.message || 'Erreur de paiement', 'error');
+        FOZILA.toast(err.message || 'Erreur lors de la demande', 'error');
       }
     }
 

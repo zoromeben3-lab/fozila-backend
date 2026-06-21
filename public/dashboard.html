@@ -39,6 +39,8 @@
     <!-- ONGLETS -->
     <div class="dash-tabs">
       <button class="dash-tab active" onclick="switchTab('library')">Ma bibliothèque</button>
+      <button class="dash-tab" onclick="switchTab('pending')">En attente</button>
+      <button class="dash-tab" onclick="switchTab('tickets')">🎟️ Mes tickets</button>
       <button class="dash-tab" onclick="switchTab('history')">Historique</button>
       <button class="dash-tab" onclick="switchTab('settings')">Paramètres</button>
     </div>
@@ -48,6 +50,24 @@
       <div class="card">
         <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;">Albums achetés</h3>
         <div class="lib-grid" id="lib-albums"></div>
+      </div>
+    </div>
+
+    <!-- EN ATTENTE -->
+    <div class="dash-panel" id="panel-pending">
+      <div class="card">
+        <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;">Demandes en attente de validation</h3>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Ces achats seront débloqués dès que l'administrateur aura confirmé la réception du paiement.</p>
+        <div id="pending-list"></div>
+      </div>
+    </div>
+
+    <!-- TICKETS -->
+    <div class="dash-panel" id="panel-tickets">
+      <div class="card">
+        <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;">🎟️ Mes tickets</h3>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Chaque achat validé vous donne un ticket pour le tirage cadeau !</p>
+        <div id="tickets-list"></div>
       </div>
     </div>
 
@@ -83,8 +103,9 @@
     FOZILA.injectAnnounce();
 
     function switchTab(id) {
+      const tabs = ['library','pending','tickets','history','settings'];
       document.querySelectorAll('.dash-tab').forEach((t,i) => {
-        t.classList.toggle('active', ['library','history','settings'][i] === id);
+        t.classList.toggle('active', tabs[i] === id);
       });
       document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
       document.getElementById('panel-' + id).classList.add('active');
@@ -160,6 +181,35 @@
       // PARAMÈTRES
       document.getElementById('set-name').value  = user.name;
       document.getElementById('set-email').value = user.email;
+
+      // EN ATTENTE
+      const pendingList = document.getElementById('pending-list');
+      try {
+        const pending = await FOZILA.getMyPendingPurchases();
+        pendingList.innerHTML = pending.length ? pending.map(p => `
+          <div class="history-row">
+            <div class="history-icon" style="background:${p.item?.grad||'var(--card2)'};">${p.item?.emoji||'🎵'}</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:600;">${p.item?.title||'Article'}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">Dépôt : ${p.pay_ref} · ${FOZILA.timeAgo(p.purchased_at)}</div>
+            </div>
+            <span style="background:rgba(240,165,0,0.1);color:#f0a500;padding:4px 12px;border-radius:100px;font-size:11px;font-weight:600;">⏳ En attente</span>
+          </div>`).join('') : '<p style="color:var(--muted);font-size:14px;text-align:center;padding:30px;">Aucune demande en attente.</p>';
+      } catch(e) { pendingList.innerHTML = '<p style="color:var(--muted);font-size:14px;">Erreur de chargement.</p>'; }
+
+      // TICKETS
+      const ticketsList = document.getElementById('tickets-list');
+      try {
+        const tickets = await FOZILA.getMyTickets();
+        ticketsList.innerHTML = tickets.length ? `
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            ${tickets.map(t => `
+              <div style="background:var(--v-dim);border:1px solid var(--v-border);border-radius:10px;padding:12px 18px;text-align:center;">
+                <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--v-light);">${t.ticket_number}</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:2px;">${FOZILA.timeAgo(t.purchased_at)}</div>
+              </div>`).join('')}
+          </div>` : '<p style="color:var(--muted);font-size:14px;text-align:center;padding:30px;">Pas encore de ticket — achetez un album ou single pour en obtenir un !</p>';
+      } catch(e) { ticketsList.innerHTML = '<p style="color:var(--muted);font-size:14px;">Erreur de chargement.</p>'; }
     }
 
     async function saveSettings() {
