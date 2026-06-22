@@ -768,16 +768,19 @@ async function updateAlbum() {
   formData.append('tracks',      document.getElementById('edit-al-tracks').value);
   formData.append('year',        document.getElementById('edit-al-year').value);
   formData.append('description', document.getElementById('edit-al-desc').value);
-  const coverFile = document.getElementById('edit-al-cover-input'); 
+  const coverFile = document.getElementById('edit-al-cover-input');
   if (coverFile && coverFile.files[0]) formData.append('cover', coverFile.files[0]);
+  // Lire les fichiers audio AVANT la requête (évite la perte sur mobile)
+  const audioInput = document.getElementById('edit-al-audio-file');
+  const audioFilesList = audioInput ? Array.from(audioInput.files) : [];
   try {
     const res = await fetch(FOZILA.API+'/albums/'+id, { method:'PUT', headers:{'Authorization':'Bearer '+FOZILA.getToken()}, body:formData });
     if (!res.ok) throw new Error((await res.json()).error);
-    const audioInput = document.getElementById('edit-al-audio-file');
-    if (audioInput && audioInput.files.length > 0) {
+    if (audioFilesList.length > 0) {
+      toast('⏳ Upload des fichiers audio en cours…', 'info');
       const af = new FormData();
-      for (let i = 0; i < audioInput.files.length; i++) {
-        af.append('audio', audioInput.files[i]);
+      for (let i = 0; i < audioFilesList.length; i++) {
+        af.append('audio', audioFilesList[i]);
       }
       const audioRes = await fetch(FOZILA.API+'/albums/'+id+'/audio', {
         method: 'PUT',
@@ -785,7 +788,8 @@ async function updateAlbum() {
         body: af
       });
       const audioData = await audioRes.json();
-      if (audioRes.ok) toast('✅ ' + audioData.message, 'success');
+      if (!audioRes.ok) { toast('⚠️ Erreur audio : ' + (audioData.error||'inconnue'), 'error'); }
+      else toast('✅ ' + audioData.message, 'success');
     }
     closeModal('m-edit-album'); renderAlbums();
     toast('✓ Album mis à jour', 'success');
@@ -933,15 +937,17 @@ async function updateSingle() {
   formData.append('price', document.getElementById('edit-si-price').value);
   const coverInput = document.getElementById('edit-si-cover-input');
   if (coverInput && coverInput.files[0]) formData.append('cover', coverInput.files[0]);
+  // Lire le fichier audio AVANT la requête (évite la perte sur mobile)
+  const audioInput = document.getElementById('edit-si-audio-file');
+  const audioFile = audioInput && audioInput.files[0] ? audioInput.files[0] : null;
   try {
     const res = await fetch(FOZILA.API+'/singles/'+id, { method:'PUT', headers:{'Authorization':'Bearer '+FOZILA.getToken()}, body:formData });
     if (!res.ok) throw new Error((await res.json()).error);
     // Upload audio si fourni
-    const audioInput = document.getElementById('edit-si-audio-file');
-    if (audioInput && audioInput.files[0]) {
+    if (audioFile) {
       toast('⏳ Upload audio en cours…', 'info');
       const af = new FormData();
-      af.append('audio', audioInput.files[0]);
+      af.append('audio', audioFile);
       const audioRes = await fetch(FOZILA.API+'/singles/'+id+'/audio', {
         method: 'PUT',
         headers: { 'Authorization': 'Bearer ' + FOZILA.getToken() },
