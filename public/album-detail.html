@@ -337,9 +337,11 @@
     function showPayInstructions(method) {
       const info = FOZILA.PAYMENT_INFO[method];
       const code = info.ussd.replace('{number}', info.number).replace('{amount}', album.price);
+      const link = FOZILA.ussdLink(method, album.price);
       document.getElementById('pay-instructions').innerHTML = `
         Composez ce code sur votre téléphone :<br>
         <div style="background:#000;border:1px solid var(--v-border);border-radius:8px;padding:10px;margin:8px 0;text-align:center;font-family:monospace;font-size:15px;color:var(--v-light);font-weight:700;">${code}</div>
+        <a href="${link}" style="display:block;text-align:center;background:var(--v);color:#fff;padding:10px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;margin-bottom:8px;">📞 Composer automatiquement</a>
         Puis collez ci-dessous le numéro de dépôt reçu par SMS.`;
     }
 
