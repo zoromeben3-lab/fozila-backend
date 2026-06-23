@@ -56,9 +56,8 @@
       <button class="modal-close" onclick="document.getElementById('buy-single-modal').classList.add('hidden')">✕</button>
       <h3 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px;">Acheter ce single</h3>
       <p style="color:var(--muted);font-size:13px;margin-bottom:24px;" id="bsm-name"></p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px;">
         <div class="pay-method selected" data-m="orange_money" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;">🟠</div><div style="font-size:12px;">Orange Money</div></div>
-        <div class="pay-method" data-m="moov_money" onclick="selectPay(this)"><div style="font-size:22px;margin-bottom:4px;">🔵</div><div style="font-size:12px;">Moov Money</div></div>
       </div>
       <div id="bsm-instructions" style="background:var(--card2);border:1px solid var(--v-border);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6;"></div>
       <div class="form-group"><label>Numéro de dépôt</label><input type="text" id="bsm-num" placeholder="Numéro reçu par SMS après le dépôt"/></div>
@@ -212,8 +211,11 @@
 
     function showBsmInstructions(method, price) {
       const info = FOZILA.PAYMENT_INFO[method];
+      const code = info.ussd.replace('{number}', info.number).replace('{amount}', price);
       document.getElementById('bsm-instructions').innerHTML = `
-        Envoyez <strong>${FOZILA.fmt(price)}</strong> au <strong style="color:var(--v-light);">${info.number}</strong> (${info.label}), puis collez ci-dessous le numéro de dépôt reçu par SMS.`;
+        Composez ce code sur votre téléphone :<br>
+        <div style="background:#000;border:1px solid var(--v-border);border-radius:8px;padding:10px;margin:8px 0;text-align:center;font-family:monospace;font-size:15px;color:var(--v-light);font-weight:700;">${code}</div>
+        Puis collez ci-dessous le numéro de dépôt reçu par SMS.`;
     }
 
     function selectPay(el) {

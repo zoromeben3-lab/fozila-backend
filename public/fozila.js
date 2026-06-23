@@ -9,8 +9,7 @@ const FOZILA = {
 
   // ── COORDONNÉES DE PAIEMENT (à modifier ici si le numéro change) ──
   PAYMENT_INFO: {
-    orange_money: { label: 'Orange Money', number: '64050827', ussd: '*144*1*1*{number}*{amount}#' },
-    moov_money:   { label: 'Moov Money',   number: '64050827', ussd: '*144*1*1*{number}*{amount}#' },
+    orange_money: { label: 'Orange Money', number: '45319050', ussd: '*144*10*{number}*{amount}#' },
   },
 
   // Génère le lien tel: avec le code USSD prêt à composer (ouvre le clavier téléphone)

@@ -102,9 +102,8 @@
       <button class="modal-close" onclick="document.getElementById('pay-modal').classList.add('hidden')">✕</button>
       <h3 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px;">💳 Paiement</h3>
       <p style="color:var(--muted);font-size:13px;margin-bottom:22px;" id="pay-album-name"></p>
-      <div class="pay-methods">
+      <div class="pay-methods" style="grid-template-columns:1fr;">
         <div class="pay-method selected" data-m="orange_money" onclick="selectPay(this)"><div class="ico">🟠</div>Orange Money</div>
-        <div class="pay-method" data-m="moov_money" onclick="selectPay(this)"><div class="ico">🔵</div>Moov Money</div>
       </div>
       <div id="pay-instructions" style="background:var(--card2);border:1px solid var(--v-border);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6;"></div>
       <div class="form-group"><label>Numéro de dépôt</label><input type="text" id="pay-number" placeholder="Numéro reçu par SMS après le dépôt"/></div>
@@ -337,8 +336,11 @@
 
     function showPayInstructions(method) {
       const info = FOZILA.PAYMENT_INFO[method];
+      const code = info.ussd.replace('{number}', info.number).replace('{amount}', album.price);
       document.getElementById('pay-instructions').innerHTML = `
-        Envoyez <strong>${FOZILA.fmt(album.price)}</strong> au <strong style="color:var(--v-light);">${info.number}</strong> (${info.label}), puis collez ci-dessous le numéro de dépôt reçu par SMS.`;
+        Composez ce code sur votre téléphone :<br>
+        <div style="background:#000;border:1px solid var(--v-border);border-radius:8px;padding:10px;margin:8px 0;text-align:center;font-family:monospace;font-size:15px;color:var(--v-light);font-weight:700;">${code}</div>
+        Puis collez ci-dessous le numéro de dépôt reçu par SMS.`;
     }
 
     async function confirmPayment() {
