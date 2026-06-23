@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
+const helmet  = require('helmet');
 const path    = require('path');
 const db      = require('./config/db');
 
@@ -10,6 +11,27 @@ const PORT = process.env.PORT || 3000;
 async function startServer() {
   await db.getDb();
   console.log('✅ Base de données connectée.');
+
+  // ── SÉCURITÉ : en-têtes HTTP (Helmet) ──
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc:  ["'self'", "'unsafe-inline'"],
+        styleSrc:   ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc:    ["'self'", "https://fonts.gstatic.com"],
+        imgSrc:     ["'self'", "data:", "https:"],
+        mediaSrc:   ["'self'", "https:"],
+        connectSrc: ["'self'"],
+      },
+    },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }));
+  app.use((req, res, next) => {
+    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
 
   // CORS
   app.use(cors({
