@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fozila-v4';
+const CACHE_NAME = 'fozila-v5';
 const STATIC_FILES = [
   '/',
   '/index.html',
@@ -34,23 +34,23 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // API calls -> toujours réseau
+  // API calls -> toujours réseau, jamais de cache
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Fichiers statiques -> Cache First
+  // Fichiers statiques -> NETWORK FIRST (toujours la dernière version si en ligne)
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => caches.match('/index.html'));
+    fetch(event.request).then((response) => {
+      if (response.ok) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+      }
+      return response;
+    }).catch(() => {
+      // Hors ligne -> on utilise le cache comme dépannage
+      return caches.match(event.request).then(cached => cached || caches.match('/index.html'));
     })
   );
 });
