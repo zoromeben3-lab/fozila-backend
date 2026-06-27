@@ -154,12 +154,15 @@
 
   <script src="fozila.js"></script>
   <script>
+    // Désactivation du Service Worker (désinscrit toute version déjà installée
+    // chez les visiteurs pour éviter les problèmes de cache figé)
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(() => console.log('✅ PWA SW enregistré'))
-          .catch(e => console.log('SW error:', e));
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(reg => reg.unregister());
       });
+      if (window.caches) {
+        caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+      }
     }
   </script>
   <script>
