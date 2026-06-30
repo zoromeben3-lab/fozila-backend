@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Fôliza — Votre musique, en ligne</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="fozila.css"/>
@@ -15,40 +15,12 @@
   <meta name="apple-mobile-web-app-title" content="Fôliza"/>
   <link rel="apple-touch-icon" href="icon-192.png"/>
   <style>
-    body { padding-top: 96px; } /* nav 60px + announce 36px */
-    
-    /* HERO */
-    .hero { position:relative;z-index:1;min-height:calc(100vh - 96px);display:flex;align-items:center;justify-content:center;text-align:center;padding:80px 6% 60px; }
-    .hero-content { max-width:680px;width:100%; }
-    .hero-badge { display:inline-flex;align-items:center;gap:8px;background:var(--v-dim);border:1px solid var(--v-border);color:var(--v-light);padding:6px 14px;border-radius:100px;font-size:12px;font-weight:500;margin-bottom:28px; }
-    .hero-badge::before { content:'';width:6px;height:6px;background:var(--v-light);border-radius:50%;animation:pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.7);} }
-    h1 { font-family:'Syne',sans-serif;font-size:clamp(38px,6vw,70px);font-weight:800;line-height:1.05;letter-spacing:-2px;margin-bottom:20px; }
-    h1 .accent { color:var(--v-light); }
-    .hero-sub { color:var(--muted);font-size:16px;line-height:1.7;max-width:480px;margin:0 auto 36px; }
-    .hero-actions { display:flex;gap:12px;flex-wrap:wrap;justify-content:center; }
-    .hero-stats { display:flex;gap:40px;justify-content:center;margin-top:52px;padding-top:36px;border-top:1px solid var(--border);flex-wrap:wrap; }
-    .stat-num { font-family:'Syne',sans-serif;font-size:26px;font-weight:800; }
-    .stat-label { font-size:12px;color:var(--muted);margin-top:2px; }
-
-    /* GRILLES */
+    body { padding-top: 96px; }
     .albums-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px; }
     .singles-row  { display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px; }
-
-    /* STEPS */
-    .steps { display:grid;grid-template-columns:repeat(3,1fr);gap:20px;counter-reset:steps; }
-    .step { background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;counter-increment:steps;position:relative; }
-    .step::before { content:counter(steps,decimal-leading-zero);position:absolute;top:18px;right:18px;font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:rgba(255,255,255,0.04);line-height:1; }
-    .step-icon { font-size:28px;margin-bottom:14px; }
-    .step-title { font-family:'Syne',sans-serif;font-size:16px;font-weight:600;margin-bottom:8px; }
-    .step-desc { font-size:13px;color:var(--muted);line-height:1.6; }
-
     footer { position:relative;z-index:1;border-top:1px solid var(--border);padding:32px 6%;display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:13px;flex-wrap:wrap;gap:12px; }
-
-    /* GLOW */
     .glow-hero { position:fixed;width:700px;height:700px;top:-200px;right:-200px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,0.12),transparent 70%);pointer-events:none;z-index:0; }
-
-    @media(max-width:768px){ .steps{grid-template-columns:1fr;} .albums-grid{grid-template-columns:repeat(2,1fr);} .singles-row{grid-template-columns:repeat(2,1fr);} }
+    @media(max-width:768px){ .albums-grid{grid-template-columns:repeat(2,1fr);} .singles-row{grid-template-columns:repeat(2,1fr);} }
   </style>
 </head>
 <body>
@@ -84,61 +56,23 @@
   <div id="announce-bar"></div>
   <nav id="main-nav"></nav>
 
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-content">
-      <div id="install-banner" style="margin-bottom:20px;">
-        <button onclick="installApp()" style="display:inline-flex;align-items:center;gap:10px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.4);color:#A78BFA;padding:10px 20px;border-radius:100px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:all 0.2s;">
-          Installer Fôliza sur ton téléphone
-        </button>
-      </div>
-      <div class="hero-badge">Plateforme de vente musicale</div>
-      <h1>Ta musique,<br>vendue <span class="accent">en ligne.</span></h1>
-      <p class="hero-sub">Découvrez et achetez des albums et singles exclusifs. Téléchargement immédiat après paiement.</p>
-      <div class="hero-actions">
-        <a href="albums.html" class="btn-primary lg">Voir les albums</a>
-        <a href="singles.html" class="btn-outline lg">Écouter les singles</a>
-      </div>
-      <div class="hero-stats">
-        <div><div class="stat-num" id="stat-albums">—</div><div class="stat-label">Albums disponibles</div></div>
-        <div><div class="stat-num" id="stat-singles">—</div><div class="stat-label">Singles disponibles</div></div>
-        <div><div class="stat-num" id="stat-visitors">—</div><div class="stat-label">Visiteurs</div></div>
-        <div><div class="stat-num">100%</div><div class="stat-label">Téléchargement sécurisé</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ALBUMS POPULAIRES -->
+  <!-- ALBUMS -->
   <div class="section-wrap">
     <div class="section-label">Catalogue</div>
-    <h2 class="section-title">Albums populaires</h2>
-    <p class="section-sub">Achetez et téléchargez en quelques secondes</p>
+    <h2 class="section-title">Albums</h2>
     <div class="albums-grid" id="albums-grid"></div>
     <div style="text-align:center;margin-top:32px;">
       <a href="albums.html" class="btn-outline">Voir tous les albums →</a>
     </div>
   </div>
 
-  <!-- SINGLES EN VEDETTE -->
+  <!-- SINGLES -->
   <div class="section-wrap" style="padding-top:0;">
     <div class="section-label">Singles</div>
-    <h2 class="section-title">Singles en vedette</h2>
-    <p class="section-sub">Titres individuels disponibles à l'achat</p>
+    <h2 class="section-title">Singles</h2>
     <div class="singles-row" id="singles-grid"></div>
     <div style="text-align:center;margin-top:32px;">
       <a href="singles.html" class="btn-outline">Voir tous les singles →</a>
-    </div>
-  </div>
-
-  <!-- COMMENT ÇA MARCHE -->
-  <div class="section-wrap" id="comment-ca-marche" style="padding-top:0;">
-    <div class="section-label">Processus</div>
-    <h2 class="section-title">Comment ça marche ?</h2>
-    <p class="section-sub">Simple, rapide, sécurisé</p>
-    <div class="steps">
-      <div class="step"><div class="step-icon">🔍</div><div class="step-title">Parcourez le catalogue</div><p class="step-desc">Albums, singles, extraits audio — explorez et choisissez ce qui vous plaît.</p></div>
-      <div class="step"><div class="step-icon"></div><div class="step-title">Payez en toute sécurité</div><p class="step-desc">Orange Money, Wave, Moov Money ou carte. Confirmé instantanément.</p></div>
-      <div class="step"><div class="step-icon">⬇️</div><div class="step-title">Téléchargez immédiatement</div><p class="step-desc">Accès immédiat dès le paiement. Retrouvez tout dans votre espace personnel.</p></div>
     </div>
   </div>
 
@@ -169,31 +103,22 @@
     FOZILA.injectNav('home');
     FOZILA.injectAnnounce();
 
-    document.getElementById('stat-visitors').textContent = FOZILA.getVisitors().toLocaleString('fr-FR');
-
     async function loadPage() {
       const user = FOZILA.getUser();
-
-      // Charger albums et singles en parallèle
       const [albums, singles] = await Promise.all([
         FOZILA.getAlbums(),
-        FOZILA.getSingles({ featured: true })
+        FOZILA.getSingles()
       ]);
 
-      // Stats hero
-      document.getElementById('stat-albums').textContent  = albums.length + '+';
-      document.getElementById('stat-singles').textContent = singles.length + '+';
-
-      // Albums (4 premiers) — vérification possession si connecté
+      // Albums
       const albumsGrid = document.getElementById('albums-grid');
-      const top4 = albums.slice(0, 4);
       const ownedAlbums = user
-        ? await Promise.all(top4.map(a => FOZILA.hasPurchased(a.id, 'album')))
-        : top4.map(() => false);
+        ? await Promise.all(albums.map(a => FOZILA.hasPurchased(a.id, 'album')))
+        : albums.map(() => false);
 
-      top4.forEach((a, i) => {
+      albumsGrid.innerHTML = albums.map((a, i) => {
         const owned = ownedAlbums[i];
-        albumsGrid.innerHTML += `
+        return `
           <a href="album-detail.html?id=${a.id}" class="album-card">
             <div class="album-cover" style="background:${a.grad}">
               ${a.cover_path ? `<img src="${a.cover_path}" style="width:100%;height:100%;object-fit:cover;">` : a.emoji}
@@ -209,21 +134,21 @@
               </div>
             </div>
           </a>`;
-      });
+      }).join('');
 
-      // Singles en vedette
+      // Singles
       const singlesGrid = document.getElementById('singles-grid');
       const ownedSingles = user
         ? await Promise.all(singles.map(s => FOZILA.hasPurchased(s.id, 'single')))
         : singles.map(() => false);
 
-      singles.forEach((s, i) => {
+      singlesGrid.innerHTML = singles.map((s, i) => {
         const owned = ownedSingles[i];
-        singlesGrid.innerHTML += `
+        return `
           <a href="singles.html?id=${s.id}" class="single-card">
             <div class="single-cover" style="background:${s.grad}">
               ${s.cover_path ? `<img src="${s.cover_path}" style="width:100%;height:100%;object-fit:cover;">` : s.emoji}
-              <span class="featured-star">⭐</span>
+              ${s.featured ? '<span class="featured-star">⭐</span>' : ''}
             </div>
             <div class="single-info">
               <div class="single-title">${s.title}</div>
@@ -234,7 +159,7 @@
               </div>
             </div>
           </a>`;
-      });
+      }).join('');
     }
 
     loadPage().catch(console.error);
