@@ -2,6 +2,65 @@ const router         = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const db             = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
+const nodemailer     = require('nodemailer');
+
+// ── CONFIGURATION EMAIL ──
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+});
+
+async function sendOrderNotification(purchase, user, item) {
+  const adminEmail = process.env.ADMIN_EMAIL_NOTIF;
+  if (!adminEmail) return;
+  try {
+    await transporter.sendMail({
+      from: `"Fôliza" <${process.env.GMAIL_USER}>`,
+      to: adminEmail,
+      subject: `🎵 Nouvelle commande en attente — ${user.name}`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f0f;color:#f0f0f0;border-radius:12px;overflow:hidden;">
+          <div style="background:#7C3AED;padding:24px;text-align:center;">
+            <h1 style="margin:0;font-size:24px;color:#fff;">Fôliza</h1>
+            <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Nouvelle commande en attente de validation</p>
+          </div>
+          <div style="padding:28px;">
+            <h2 style="color:#A78BFA;font-size:18px;margin-bottom:20px;">Détails de la commande</h2>
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="padding:8px 0;color:#888;font-size:14px;">👤 Client</td><td style="padding:8px 0;font-weight:bold;">${user.name}</td></tr>
+              <tr><td style="padding:8px 0;color:#888;font-size:14px;">📱 Téléphone</td><td style="padding:8px 0;">${user.phone || 'Non renseigné'}</td></tr>
+              <tr><td style="padding:8px 0;color:#888;font-size:14px;">🎵 Article</td><td style="padding:8px 0;">${item.title} (${purchase.item_type === 'album' ? 'Album' : 'Single'})</td></tr>
+              <tr><td style="padding:8px 0;color:#888;font-size:14px;">💰 Montant</td><td style="padding:8px 0;color:#A78BFA;font-weight:bold;">${Number(item.price).toLocaleString('fr-FR')} FCFA</td></tr>
+              <tr><td style="padding:8px 0;color:#888;font-size:14px;">🧾 N° de dépôt</td><td style="padding:8px 0;font-family:monospace;background:#1a1a1a;padding:4px 8px;border-radius:4px;">${purchase.pay_ref}</td></tr>
+              <tr><td style="padding:8px 0;color:#888;font-size:14px;">🕐 Date</td><td style="padding:8px 0;">${new Date().toLocaleString('fr-FR')}</td></tr>
+            </table>
+            <div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;margin-top:24px;">
+              <p style="margin:0 0 12px;font-weight:bold;color:#f0a500;">⚠️ Ce que vous devez faire :</p>
+              <ol style="margin:0;padding-left:20px;color:#ccc;font-size:14px;line-height:1.8;">
+                <li>Vérifiez votre <strong>Orange Money</strong> — avez-vous reçu <strong>${Number(item.price).toLocaleString('fr-FR')} FCFA</strong> ?</li>
+                <li>Le numéro de dépôt fourni est : <strong style="color:#A78BFA;">${purchase.pay_ref}</strong></li>
+                <li>Si le paiement est confirmé → <strong style="color:#22c55e;">Validez</strong> la commande</li>
+                <li>Si vous n'avez rien reçu → <strong style="color:#ef4444;">Rejetez</strong> la commande</li>
+              </ol>
+            </div>
+            <div style="text-align:center;margin-top:24px;">
+              <a href="https://xn--fliza-6ta.com/admin.html" style="display:inline-block;background:#7C3AED;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;">👉 Accéder au dashboard admin</a>
+            </div>
+          </div>
+          <div style="padding:16px;text-align:center;border-top:1px solid #222;color:#555;font-size:12px;">
+            Cet email est envoyé automatiquement par Fôliza à chaque nouvelle commande.
+          </div>
+        </div>
+      `,
+    });
+    console.log('✅ Email notification envoyé à', adminEmail);
+  } catch(err) {
+    console.error('❌ Erreur envoi email:', err.message);
+  }
+}
 
 // ── MIGRATION: ajouter colonne ticket_number si elle n'existe pas ──
 try {
@@ -41,6 +100,11 @@ router.post('/', requireAuth, (req, res) => {
      VALUES (?,?,?,?,?,?,'pending','')`,
     [req.user.id, item_id, item_type, item.price, pay_method||'orange_money', pay_ref.trim()]
   );
+
+  // Envoyer notification email à l'admin
+  const userInfo = db.get('SELECT * FROM users WHERE id=?', [req.user.id]);
+  const purchase = { item_id, item_type, pay_method: pay_method||'orange_money', pay_ref: pay_ref.trim() };
+  sendOrderNotification(purchase, userInfo, item).catch(console.error);
 
   res.status(201).json({
     message: 'Demande envoyée. Elle sera validée dès que le paiement sera confirmé.',
