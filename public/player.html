@@ -172,6 +172,9 @@
 
 <script src="fozila.js"></script>
 <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
   const user = FOZILA.getUser();
   if (!user || !FOZILA.getToken()) { location.href = 'auth.html'; }
 
