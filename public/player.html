@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Fôliza — Lecteur</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="fozila.css"/>
+  <style>
+    body { padding-top: 0; background: #080808; }
+    .player-page { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* COVER PLEIN ECRAN */
+    .cover-hero {
+      position: relative;
+      width: 100%;
+      height: 55vw;
+      max-height: 420px;
+      min-height: 260px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .cover-hero img, .cover-hero .cover-fallback {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .cover-fallback {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 100px;
+    }
+    .cover-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(8,8,8,0.1) 0%, rgba(8,8,8,0.85) 100%);
+    }
+    .cover-back {
+      position: absolute; top: 16px; left: 16px;
+      background: rgba(0,0,0,0.5); border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+      font-size: 18px; display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(8px);
+    }
+    .cover-info {
+      position: absolute; bottom: 16px; left: 20px; right: 20px;
+    }
+    .cover-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(20px, 5vw, 28px);
+      font-weight: 800; color: #fff;
+      margin-bottom: 4px;
+    }
+    .cover-artist { font-size: 13px; color: rgba(255,255,255,0.65); }
+
+    /* LECTEUR */
+    .player-body {
+      flex: 1; padding: 20px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    /* BARRE DE PROGRESSION */
+    .progress-wrap { padding: 0 4px; }
+    .progress-bar {
+      width: 100%; height: 4px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 100px; cursor: pointer; position: relative;
+    }
+    .progress-fill {
+      height: 100%; background: var(--v-light);
+      border-radius: 100px; width: 0%; transition: width 0.1s;
+      pointer-events: none;
+    }
+    .progress-thumb {
+      width: 14px; height: 14px; background: var(--v-light);
+      border-radius: 50%; position: absolute;
+      top: -5px; left: 0%; transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .progress-times {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--muted); margin-top: 6px;
+    }
+
+    /* CONTROLES */
+    .controls {
+      display: flex; align-items: center; justify-content: center; gap: 32px;
+    }
+    .ctrl-btn {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 24px; padding: 8px;
+      transition: color 0.2s; display: flex; align-items: center;
+    }
+    .ctrl-btn:hover { color: var(--text); }
+    .ctrl-play {
+      width: 60px; height: 60px;
+      background: var(--v); border: none; border-radius: 50%;
+      cursor: pointer; font-size: 22px; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .ctrl-play:hover { background: #6D28D9; transform: scale(1.05); }
+
+    /* LISTE DES PISTES */
+    .tracks-section { flex: 1; }
+    .tracks-label {
+      font-size: 11px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.5px;
+      font-weight: 600; margin-bottom: 10px;
+    }
+    .track-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 8px; border-radius: 10px;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .track-item:hover { background: rgba(255,255,255,0.05); }
+    .track-item.active { background: var(--v-dim); }
+    .track-num {
+      font-size: 11px; color: var(--muted);
+      width: 20px; text-align: center; flex-shrink: 0;
+    }
+    .track-item.active .track-num { color: var(--v-light); }
+    .track-name { font-size: 13px; flex: 1; }
+    .track-item.active .track-name { color: var(--v-light); font-weight: 600; }
+    .track-dur { font-size: 11px; color: var(--muted); }
+    .track-playing { font-size: 12px; color: var(--v-light); }
+  </style>
+</head>
+<body>
+<div class="player-page">
+
+  <!-- COVER PLEIN ECRAN -->
+  <div class="cover-hero" id="cover-hero">
+    <div class="cover-fallback" id="cover-fallback" style="display:none;">🎵</div>
+    <img id="cover-img" src="" alt="" style="display:none;"/>
+    <div class="cover-overlay"></div>
+    <button class="cover-back" onclick="history.back()">←</button>
+    <div class="cover-info">
+      <div class="cover-title" id="cover-title">Chargement...</div>
+      <div class="cover-artist" id="cover-artist"></div>
+    </div>
+  </div>
+
+  <!-- CORPS DU LECTEUR -->
+  <div class="player-body">
+
+    <!-- BARRE DE PROGRESSION -->
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progress-bar" onclick="seekTo(event)">
+        <div class="progress-fill" id="progress-fill"></div>
+        <div class="progress-thumb" id="progress-thumb"></div>
+      </div>
+      <div class="progress-times">
+        <span id="time-cur">0:00</span>
+        <span id="time-dur">0:00</span>
+      </div>
+    </div>
+
+    <!-- CONTROLES -->
+    <div class="controls">
+      <button class="ctrl-btn" onclick="prevTrack()" title="Précédent">⏮</button>
+      <button class="ctrl-play" id="play-btn" onclick="togglePlay()">▶</button>
+      <button class="ctrl-btn" onclick="nextTrack()" title="Suivant">⏭</button>
+    </div>
+
+    <!-- LISTE DES PISTES -->
+    <div class="tracks-section">
+      <div class="tracks-label">Pistes</div>
+      <div id="tracks-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="fozila.js"></script>
+<script>
+  const user = FOZILA.getUser();
+  if (!user || !FOZILA.getToken()) { location.href = 'auth.html'; }
+
+  const params    = new URLSearchParams(location.search);
+  const token     = params.get('token');
+  const itemType  = params.get('type') || 'album';
+  const itemId    = params.get('id');
+
+  if (!token) { location.href = 'dashboard.html'; }
+
+  let audio    = new Audio();
+  let tracks   = [];
+  let current  = 0;
+  let animFrame = null;
+
+  async function init() {
+    try {
+      if (itemType === 'album') {
+        const album = await FOZILA.getAlbum(itemId);
+        document.title = 'Fôliza — ' + album.title;
+        document.getElementById('cover-title').textContent  = album.title;
+        document.getElementById('cover-artist').textContent = album.artist + ' · ' + album.genre;
+        document.getElementById('cover-hero').style.background = album.grad || 'linear-gradient(135deg,#1a0533,#4c1d95)';
+        if (album.cover_path) {
+          const img = document.getElementById('cover-img');
+          img.src = album.cover_path;
+          img.style.display = 'block';
+        } else {
+          const fb = document.getElementById('cover-fallback');
+          fb.textContent = album.emoji || '🎵';
+          fb.style.display = 'flex';
+        }
+        tracks = await FOZILA.api('GET', `/download/${token}/tracks`);
+      } else {
+        const single = await FOZILA.getSingle(itemId);
+        document.title = 'Fôliza — ' + single.title;
+        document.getElementById('cover-title').textContent  = single.title;
+        document.getElementById('cover-artist').textContent = single.genre;
+        document.getElementById('cover-hero').style.background = single.grad || 'linear-gradient(135deg,#1a0533,#7c3aed)';
+        if (single.cover_path) {
+          const img = document.getElementById('cover-img');
+          img.src = single.cover_path;
+          img.style.display = 'block';
+        } else {
+          const fb = document.getElementById('cover-fallback');
+          fb.textContent = single.emoji || '🎵';
+          fb.style.display = 'flex';
+        }
+        tracks = [{ id: 'single', title: single.title, track_num: 1, duration: single.duration }];
+      }
+
+      renderTracks();
+      loadTrack(0);
+    } catch(e) {
+      FOZILA.toast('Erreur de chargement', 'error');
+      console.error(e);
+    }
+  }
+
+  function renderTracks() {
+    document.getElementById('tracks-list').innerHTML = tracks.map((t, i) => `
+      <div class="track-item ${i === current ? 'active' : ''}" id="track-item-${i}" onclick="loadTrack(${i})">
+        <span class="track-num">${String(t.track_num || i+1).padStart(2,'0')}</span>
+        <span class="track-name">${t.title}</span>
+        ${t.duration ? `<span class="track-dur">${t.duration}</span>` : ''}
+        ${i === current ? '<span class="track-playing">▶</span>' : ''}
+      </div>`).join('');
+  }
+
+  function loadTrack(index) {
+    current = index;
+    const t = tracks[index];
+    const src = itemType === 'album'
+      ? `/api/download/${token}/track/${t.id}?dl=0`
+      : `/api/download/${token}?dl=0`;
+    audio.src = src;
+    audio.play();
+    document.getElementById('play-btn').textContent = '⏸';
+    renderTracks();
+    startProgress();
+  }
+
+  function togglePlay() {
+    if (audio.paused) {
+      audio.play();
+      document.getElementById('play-btn').textContent = '⏸';
+    } else {
+      audio.pause();
+      document.getElementById('play-btn').textContent = '▶';
+    }
+  }
+
+  function prevTrack() {
+    if (current > 0) loadTrack(current - 1);
+    else { audio.currentTime = 0; }
+  }
+
+  function nextTrack() {
+    if (current < tracks.length - 1) loadTrack(current + 1);
+  }
+
+  audio.addEventListener('ended', () => {
+    if (current < tracks.length - 1) loadTrack(current + 1);
+    else { document.getElementById('play-btn').textContent = '▶'; }
+  });
+
+  function fmt(s) {
+    s = Math.floor(s || 0);
+    return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+  }
+
+  function startProgress() {
+    cancelAnimationFrame(animFrame);
+    function tick() {
+      const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+      document.getElementById('progress-fill').style.width  = pct + '%';
+      document.getElementById('progress-thumb').style.left  = pct + '%';
+      document.getElementById('time-cur').textContent = fmt(audio.currentTime);
+      document.getElementById('time-dur').textContent = fmt(audio.duration);
+      animFrame = requestAnimationFrame(tick);
+    }
+    animFrame = requestAnimationFrame(tick);
+  }
+
+  function seekTo(e) {
+    const bar = document.getElementById('progress-bar');
+    const pct = e.offsetX / bar.offsetWidth;
+    audio.currentTime = pct * (audio.duration || 0);
+  }
+
+  init().catch(console.error);
+</script>
+</body>
+</html>

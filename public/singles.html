@@ -131,18 +131,7 @@
         token = result.download_token;
       }
       if (!token) { FOZILA.toast('Erreur d\'accès', 'error'); return; }
-      stopGlobal();
-      const s = allSingles.find(x => x.id === id);
-      document.getElementById('np-emoji').textContent = s?.emoji || '🎵';
-      document.getElementById('np-title').textContent = s?.title || 'Single';
-      document.getElementById('now-playing-banner').style.display = 'flex';
-      document.getElementById('np-btn').textContent = '⏸';
-      _audioEl = new Audio(`/api/download/${token}?dl=0`);
-      _audioEl.volume = 0.8;
-      _audioEl.play().catch(() => FOZILA.toast('Lecture impossible', 'error'));
-      globalAudio = { start: Date.now() };
-      animateBar();
-      _audioEl.addEventListener('ended', stopGlobal);
+      location.href = `player.html?token=${token}&type=single&id=${id}`;
     }
 
     // Preview audio — vrai fichier MP3

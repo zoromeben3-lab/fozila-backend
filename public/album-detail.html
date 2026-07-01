@@ -278,11 +278,7 @@
           <div class="price-block">
             ${owned ? `
               <div style="color:var(--green);font-size:13px;font-weight:700;margin-bottom:10px;">✓ Album acheté — accès complet</div>
-              <button class="btn-green" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" onclick="toggleAlbumPlayer()">▶ Écouter l'album</button>
-              <div id="album-player-container" style="display:none;margin-top:12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;">
-                <audio id="main-audio-player" controls style="width:100%;margin-bottom:8px;"></audio>
-                <div id="album-tracks-list"></div>
-              </div>
+              <button class="btn-green" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" onclick="goToPlayer()">▶ Écouter l'album</button>
             ` : pending ? `
               <div style="color:var(--gold,#f0a500);font-size:13px;font-weight:700;margin-bottom:10px;">⏳ Demande en attente de validation</div>
               <button class="btn-outline" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" disabled>En attente de confirmation du paiement</button>
@@ -365,45 +361,10 @@
     }
 
     // Lecteur audio pour album acheté
-    let _albumTracks = [];
-    async function toggleAlbumPlayer() {
-      const container = document.getElementById('album-player-container');
-      if (container.style.display === 'block') {
-        container.style.display = 'none';
-        return;
-      }
-      try {
-        const token = await FOZILA.getDownloadToken(album.id, 'album');
-        if (!token) { FOZILA.toast('Erreur d\'accès', 'error'); return; }
-        _albumTracks = await FOZILA.api('GET', `/download/${token}/tracks`);
-        if (!_albumTracks.length) { FOZILA.toast('Aucun titre disponible pour cet album', 'info'); return; }
-        const audio = document.getElementById('main-audio-player');
-        const list  = document.getElementById('album-tracks-list');
-        audio.src = `/api/download/${token}/track/${_albumTracks[0].id}?dl=0`;
-        audio.play();
-        list.innerHTML = _albumTracks.map(t => `
-          <div onclick="playAlbumTrack('${token}', ${t.id}, this)"
-            style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;border-radius:6px;transition:background 0.2s;"
-            onmouseover="this.style.background='var(--v-dim)'" onmouseout="this.style.background='none'">
-            <span style="font-size:10px;color:var(--muted);width:18px;">${String(t.track_num).padStart(2,'0')}</span>
-            <span style="font-size:12px;flex:1;">${t.title}</span>
-            <span style="font-size:12px;">▶</span>
-          </div>`).join('');
-        container.style.display = 'block';
-        audio.addEventListener('ended', () => {
-          const idx = _albumTracks.findIndex(t => audio.src.includes(`track/${t.id}`));
-          if (idx < _albumTracks.length - 1) {
-            audio.src = `/api/download/${token}/track/${_albumTracks[idx+1].id}?dl=0`;
-            audio.play();
-          }
-        });
-      } catch(e) { FOZILA.toast('Erreur chargement audio', 'error'); }
-    }
-
-    function playAlbumTrack(token, trackId, el) {
-      const audio = document.getElementById('main-audio-player');
-      audio.src = `/api/download/${token}/track/${trackId}?dl=0`;
-      audio.play();
+    async function goToPlayer() {
+      const token = await FOZILA.getDownloadToken(album.id, 'album');
+      if (!token) { FOZILA.toast('Erreur d\'accès', 'error'); return; }
+      location.href = `player.html?token=${token}&type=album&id=${album.id}`;
     }
 
     loadAlbum().catch(console.error);

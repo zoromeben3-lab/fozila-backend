@@ -164,8 +164,7 @@
             <div class="ttl">${p.item?.title || 'Article'}</div>
             <div class="prc">${p.item_type==='album'?'Album':'Single'} · ${FOZILA.fmt(p.amount)}</div>
             <button class="btn-primary" style="width:100%;padding:6px;font-size:11px;border-radius:6px;margin-top:4px;"
-              onclick="openPlayer('${p.download_token}', '${p.item_type}', this)">▶ Écouter</button>
-            <div class="tracks-list" id="tracks-${p.download_token}"></div>
+              onclick="location.href='player.html?token=${p.download_token}&type=${p.item_type}&id=${p.item?.id}'">▶ Écouter</button>
           </div>
         `).join('');
       }
