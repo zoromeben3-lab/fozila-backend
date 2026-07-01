@@ -48,19 +48,33 @@ const FOZILA = {
 
   // ── ALBUMS ──
   async getAlbums(params = {}) {
-    const qs   = new URLSearchParams(params).toString();
-    const data = await this.api('GET', `/albums${qs ? '?' + qs : ''}`);
-    this._cache.albums = data;
-    return data;
+    const qs = new URLSearchParams(params).toString();
+    try {
+      const data = await this.api('GET', `/albums${qs ? '?' + qs : ''}`);
+      this._cache.albums = data;
+      localStorage.setItem('fozila_albums_cache', JSON.stringify(data));
+      return data;
+    } catch(e) {
+      const cached = localStorage.getItem('fozila_albums_cache');
+      if (cached) return JSON.parse(cached);
+      throw e;
+    }
   },
   async getAlbum(id) { return await this.api('GET', `/albums/${id}`); },
 
   // ── SINGLES ──
   async getSingles(params = {}) {
-    const qs   = new URLSearchParams(params).toString();
-    const data = await this.api('GET', `/singles${qs ? '?' + qs : ''}`);
-    this._cache.singles = data;
-    return data;
+    const qs = new URLSearchParams(params).toString();
+    try {
+      const data = await this.api('GET', `/singles${qs ? '?' + qs : ''}`);
+      this._cache.singles = data;
+      localStorage.setItem('fozila_singles_cache', JSON.stringify(data));
+      return data;
+    } catch(e) {
+      const cached = localStorage.getItem('fozila_singles_cache');
+      if (cached) return JSON.parse(cached);
+      throw e;
+    }
   },
   async getSingle(id) { return await this.api('GET', `/singles/${id}`); },
 
