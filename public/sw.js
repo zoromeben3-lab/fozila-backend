@@ -1,4 +1,4 @@
-const CACHE_STATIC = 'fozila-static-v7';
+const CACHE_STATIC = 'fozila-static-v8';
 const CACHE_AUDIO  = 'fozila-audio-v1';
 
 const STATIC_FILES = [
@@ -34,30 +34,30 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Laisser passer toutes les ressources externes (Cloudinary, Google, etc.)
-  if (url.origin !== self.location.origin) {
-    return; // Pas de cache, fetch normal
-  }
+  // Ignorer les ressources externes (Cloudinary, Google, etc.)
+  if (url.origin !== self.location.origin) return;
 
-  // Audio API — cache après première écoute
+  // Audio — cache après première écoute
   if (url.pathname.startsWith('/api/download/')) {
-    event.respondWith(
-      caches.open(CACHE_AUDIO).then(async cache => {
-        const cached = await cache.match(event.request);
-        if (cached) return cached;
-        try {
-          const response = await fetch(event.request);
-          if (response.ok) cache.put(event.request, response.clone());
-          return response;
-        } catch {
-          return cached || new Response('Audio non disponible hors ligne', { status: 503 });
+    event.respondWith((async () => {
+      const cache  = await caches.open(CACHE_AUDIO);
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+      try {
+        const response = await fetch(event.request);
+        if (response.ok) {
+          const clone = response.clone(); // Clone AVANT tout
+          cache.put(event.request, clone);
         }
-      })
-    );
+        return response;
+      } catch {
+        return cached || new Response('Audio non disponible hors ligne', { status: 503 });
+      }
+    })());
     return;
   }
 
-  // Autres API — toujours réseau
+  // Autres API — réseau uniquement, réponse JSON hors ligne
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() =>
@@ -71,14 +71,18 @@ self.addEventListener('fetch', event => {
   }
 
   // Fichiers statiques — network first, cache en fallback
-  event.respondWith(
-    fetch(event.request).then(response => {
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(event.request);
       if (response.ok) {
-        caches.open(CACHE_STATIC).then(cache => cache.put(event.request, response.clone()));
+        const clone = response.clone(); // Clone AVANT de retourner
+        const cache = await caches.open(CACHE_STATIC);
+        cache.put(event.request, clone);
       }
       return response;
-    }).catch(() =>
-      caches.match(event.request).then(cached => cached || caches.match('/index.html'))
-    )
-  );
+    } catch {
+      const cached = await caches.match(event.request);
+      return cached || await caches.match('/index.html');
+    }
+  })());
 });
