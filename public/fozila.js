@@ -48,33 +48,19 @@ const FOZILA = {
 
   // ── ALBUMS ──
   async getAlbums(params = {}) {
-    const qs = new URLSearchParams(params).toString();
-    try {
-      const data = await this.api('GET', `/albums${qs ? '?' + qs : ''}`);
-      this._cache.albums = data;
-      localStorage.setItem('fozila_albums_cache', JSON.stringify(data));
-      return data;
-    } catch(e) {
-      const cached = localStorage.getItem('fozila_albums_cache');
-      if (cached) return JSON.parse(cached);
-      throw e;
-    }
+    const qs   = new URLSearchParams(params).toString();
+    const data = await this.api('GET', `/albums${qs ? '?' + qs : ''}`);
+    this._cache.albums = data;
+    return data;
   },
   async getAlbum(id) { return await this.api('GET', `/albums/${id}`); },
 
   // ── SINGLES ──
   async getSingles(params = {}) {
-    const qs = new URLSearchParams(params).toString();
-    try {
-      const data = await this.api('GET', `/singles${qs ? '?' + qs : ''}`);
-      this._cache.singles = data;
-      localStorage.setItem('fozila_singles_cache', JSON.stringify(data));
-      return data;
-    } catch(e) {
-      const cached = localStorage.getItem('fozila_singles_cache');
-      if (cached) return JSON.parse(cached);
-      throw e;
-    }
+    const qs   = new URLSearchParams(params).toString();
+    const data = await this.api('GET', `/singles${qs ? '?' + qs : ''}`);
+    this._cache.singles = data;
+    return data;
   },
   async getSingle(id) { return await this.api('GET', `/singles/${id}`); },
 
@@ -82,16 +68,60 @@ const FOZILA = {
   async purchase(item_id, item_type, pay_method, pay_ref) {
     return await this.api('POST', '/purchases', { item_id, item_type, pay_method, pay_ref });
   },
-  async getMyPurchases() { return await this.api('GET', '/purchases/my'); },
+  async getMyPurchases() {
+    try {
+      const purchases = await this.api('GET', '/purchases/my');
+      // Sauvegarder en cache + les tokens individuels
+      localStorage.setItem('fozila_purchases_cache', JSON.stringify(purchases));
+      purchases.forEach(p => {
+        if (p.download_token) {
+          localStorage.setItem(`owned_${p.item_type}_${p.item_id}`, JSON.stringify({
+            owned: true,
+            download_token: p.download_token
+          }));
+        }
+      });
+      return purchases;
+    } catch {
+      const cached = localStorage.getItem('fozila_purchases_cache');
+      return cached ? JSON.parse(cached) : [];
+    }
+  },
   async getMyPendingPurchases() { return await this.api('GET', '/purchases/my/pending'); },
   async getMyTickets() { return await this.api('GET', '/purchases/my/tickets'); },
   async hasPurchased(item_id, item_type) {
-    try { return (await this.api('GET', `/purchases/has/${item_type}/${item_id}`)).owned; }
-    catch { return false; }
+    try {
+      const result = await this.api('GET', `/purchases/has/${item_type}/${item_id}`);
+      // Sauvegarder en cache local
+      if (result.owned) {
+        const key = `owned_${item_type}_${item_id}`;
+        localStorage.setItem(key, JSON.stringify({
+          owned: true,
+          download_token: result.download_token
+        }));
+      }
+      return result.owned;
+    } catch {
+      // Hors ligne — vérifier le cache local
+      const cached = localStorage.getItem(`owned_${item_type}_${item_id}`);
+      return cached ? JSON.parse(cached).owned : false;
+    }
   },
   async getDownloadToken(item_id, item_type) {
-    try { return (await this.api('GET', `/purchases/has/${item_type}/${item_id}`)).download_token; }
-    catch { return null; }
+    try {
+      const result = await this.api('GET', `/purchases/has/${item_type}/${item_id}`);
+      if (result.download_token) {
+        localStorage.setItem(`owned_${item_type}_${item_id}`, JSON.stringify({
+          owned: true,
+          download_token: result.download_token
+        }));
+      }
+      return result.download_token || null;
+    } catch {
+      // Hors ligne — vérifier le cache local
+      const cached = localStorage.getItem(`owned_${item_type}_${item_id}`);
+      return cached ? JSON.parse(cached).download_token : null;
+    }
   },
 
   // ── TÉLÉCHARGEMENT ──
