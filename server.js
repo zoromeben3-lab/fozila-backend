@@ -14,18 +14,7 @@ async function startServer() {
 
   // ── SÉCURITÉ : en-têtes HTTP (Helmet) ──
   app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc:    ["'self'"],
-        scriptSrc:     ["'self'", "'unsafe-inline'"],
-        scriptSrcAttr: ["'unsafe-inline'"],
-        styleSrc:      ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc:       ["'self'", "https://fonts.gstatic.com"],
-        imgSrc:        ["'self'", "data:", "https:", "https://res.cloudinary.com"],
-        mediaSrc:      ["'self'", "https:", "https://res.cloudinary.com"],
-        connectSrc:    ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://res.cloudinary.com"],
-      },
-    },
+    contentSecurityPolicy: false, // Désactivé car bloque Cloudinary/Google Fonts
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   }));
   app.use((req, res, next) => {
