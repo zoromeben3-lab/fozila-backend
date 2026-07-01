@@ -122,8 +122,22 @@
     }
 
     async function loadDashboard() {
-      // Charger les achats depuis l'API
-      const purchases = await FOZILA.getMyPurchases();
+      let purchases = [];
+      let isOffline = false;
+
+      try {
+        purchases = await FOZILA.getMyPurchases();
+        // Sauvegarder en cache local pour le mode hors ligne
+        localStorage.setItem('fozila_purchases_cache', JSON.stringify(purchases));
+      } catch(e) {
+        // Hors ligne — charger depuis le cache local
+        isOffline = true;
+        const cached = localStorage.getItem('fozila_purchases_cache');
+        purchases = cached ? JSON.parse(cached) : [];
+        if (isOffline) {
+          FOZILA.toast('Mode hors ligne — bibliothèque depuis le cache', 'info');
+        }
+      }
       const albumPurchases  = purchases.filter(p => p.item_type === 'album');
       const singlePurchases = purchases.filter(p => p.item_type === 'single');
       const totalSpent = purchases.reduce((s, p) => s + p.amount, 0);
@@ -134,8 +148,8 @@
         <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--v),#4c1d95);display:flex;align-items:center;justify-content:center;font-size:28px;border:3px solid var(--v-border);"></div>
         <div>
           <h1 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:3px;" id="dash-name">${user.name}</h1>
-          <p style="color:var(--muted);font-size:13px;margin-bottom:10px;">${user.email}</p>
           <span style="background:var(--v-dim);border:1px solid var(--v-border);color:var(--v-light);padding:3px 12px;border-radius:100px;font-size:11px;font-weight:600;">Membre Fôliza</span>
+          ${isOffline ? `<span style="background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.3);color:#f0a500;padding:3px 12px;border-radius:100px;font-size:11px;font-weight:600;margin-left:6px;">📴 Hors ligne</span>` : ''}
         </div>
       `;
 
