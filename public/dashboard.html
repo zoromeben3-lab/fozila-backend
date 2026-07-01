@@ -350,7 +350,9 @@
       try {
         if (type === 'album') {
           const tracks = await FOZILA.api('GET', `/download/${token}/tracks`);
-          // Mettre chaque piste en cache
+          // Sauvegarder les pistes en cache localStorage
+          localStorage.setItem('tracks_cache_' + token, JSON.stringify(tracks));
+          // Mettre chaque piste en cache audio via le SW
           for (const t of tracks) {
             await fetch(`/api/download/${token}/track/${t.id}?dl=0`);
           }

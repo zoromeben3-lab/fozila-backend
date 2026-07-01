@@ -220,9 +220,18 @@
         }
         try {
           tracks = await FOZILA.api('GET', `/download/${token}/tracks`);
+          // Sauvegarder les pistes en cache pour le mode hors ligne
+          localStorage.setItem('tracks_cache_' + token, JSON.stringify(tracks));
         } catch {
-          FOZILA.toast('Pistes non disponibles hors ligne — écoutez d\'abord en ligne', 'error');
-          return;
+          // Hors ligne — charger depuis le cache
+          const cached = localStorage.getItem('tracks_cache_' + token);
+          if (cached) {
+            tracks = JSON.parse(cached);
+          } else {
+            FOZILA.toast('Écoutez d\'abord en ligne pour activer le mode hors ligne', 'error');
+            setTimeout(() => location.href = 'dashboard.html', 2000);
+            return;
+          }
         }
       } else {
         let single;
