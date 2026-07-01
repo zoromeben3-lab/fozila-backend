@@ -176,7 +176,9 @@
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
   const user = FOZILA.getUser();
-  if (!user || !FOZILA.getToken()) { location.href = 'auth.html'; }
+  const token_stored = FOZILA.getToken();
+  // Hors ligne : on utilise les données en cache sans rediriger
+  if (!user || !token_stored) { location.href = 'auth.html'; }
 
   const params    = new URLSearchParams(location.search);
   const token     = params.get('token');
@@ -193,10 +195,19 @@
   async function init() {
     try {
       if (itemType === 'album') {
-        const album = await FOZILA.getAlbum(itemId);
+        let album;
+        try {
+          album = await FOZILA.getAlbum(itemId);
+        } catch {
+          // Hors ligne — utiliser le cache albums
+          const cached = localStorage.getItem('fozila_albums_cache');
+          const albums = cached ? JSON.parse(cached) : [];
+          album = albums.find(a => String(a.id) === String(itemId));
+          if (!album) throw new Error('Album non disponible hors ligne');
+        }
         document.title = 'Fôliza — ' + album.title;
         document.getElementById('cover-title').textContent  = album.title;
-        document.getElementById('cover-artist').textContent = album.artist + ' · ' + album.genre;
+        document.getElementById('cover-artist').textContent = (album.artist || '') + ' · ' + album.genre;
         document.getElementById('cover-hero').style.background = album.grad || 'linear-gradient(135deg,#1a0533,#4c1d95)';
         if (album.cover_path) {
           const img = document.getElementById('cover-img');
@@ -207,9 +218,22 @@
           fb.textContent = album.emoji || '🎵';
           fb.style.display = 'flex';
         }
-        tracks = await FOZILA.api('GET', `/download/${token}/tracks`);
+        try {
+          tracks = await FOZILA.api('GET', `/download/${token}/tracks`);
+        } catch {
+          FOZILA.toast('Pistes non disponibles hors ligne — écoutez d\'abord en ligne', 'error');
+          return;
+        }
       } else {
-        const single = await FOZILA.getSingle(itemId);
+        let single;
+        try {
+          single = await FOZILA.getSingle(itemId);
+        } catch {
+          const cached = localStorage.getItem('fozila_singles_cache');
+          const singles = cached ? JSON.parse(cached) : [];
+          single = singles.find(s => String(s.id) === String(itemId));
+          if (!single) throw new Error('Single non disponible hors ligne');
+        }
         document.title = 'Fôliza — ' + single.title;
         document.getElementById('cover-title').textContent  = single.title;
         document.getElementById('cover-artist').textContent = single.genre;
@@ -229,7 +253,7 @@
       renderTracks();
       loadTrack(0);
     } catch(e) {
-      FOZILA.toast('Erreur de chargement', 'error');
+      FOZILA.toast(e.message || 'Erreur de chargement', 'error');
       console.error(e);
     }
   }
