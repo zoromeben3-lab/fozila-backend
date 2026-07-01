@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fôliza — Singles</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="fozila.css"/>
@@ -114,7 +114,7 @@
             <div class="single-footer">
               <span style="font-size:14px;font-weight:700;color:${pending?'#f0a500':'var(--v-light)'};">${owned ? '✓ Acheté' : pending ? '⏳ En attente' : FOZILA.fmt(s.price)}</span>
               ${owned
-                ? `<button onclick="downloadSingle(${s.id})" class="btn-buy">⬇️</button>`
+                ? `<button onclick="playSingle(${s.id}, '${statuses[i].download_token}')" class="btn-buy">▶ Écouter</button>`
                 : pending
                 ? `<button class="btn-buy" disabled style="opacity:0.5;">⏳</button>`
                 : `<button onclick="openBuySingle(${s.id})" class="btn-buy">Acheter</button>`
@@ -125,9 +125,24 @@
       }).join('');
     }
 
-    async function downloadSingle(id) {
-      const token = await FOZILA.getDownloadToken(id, 'single');
-      FOZILA.download(token);
+    async function playSingle(id, token) {
+      if (!token) {
+        const result = await FOZILA.api('GET', `/purchases/has/single/${id}`).catch(() => ({}));
+        token = result.download_token;
+      }
+      if (!token) { FOZILA.toast('Erreur d\'accès', 'error'); return; }
+      stopGlobal();
+      const s = allSingles.find(x => x.id === id);
+      document.getElementById('np-emoji').textContent = s?.emoji || '🎵';
+      document.getElementById('np-title').textContent = s?.title || 'Single';
+      document.getElementById('now-playing-banner').style.display = 'flex';
+      document.getElementById('np-btn').textContent = '⏸';
+      _audioEl = new Audio(`/api/download/${token}?dl=0`);
+      _audioEl.volume = 0.8;
+      _audioEl.play().catch(() => FOZILA.toast('Lecture impossible', 'error'));
+      globalAudio = { start: Date.now() };
+      animateBar();
+      _audioEl.addEventListener('ended', stopGlobal);
     }
 
     // Preview audio — vrai fichier MP3
@@ -153,7 +168,7 @@
       _audioEl.play().catch(() => FOZILA.toast('Lecture impossible', 'error'));
 
       // Arrêter après 30 secondes (extrait)
-      globalAudio = { start: Date.now(), duration: 30000 };
+      globalAudio = { start: Date.now(), isPreview: true };
       animateBar();
       setTimeout(() => stopGlobal(), 30000);
 
@@ -164,7 +179,8 @@
       if (!globalAudio || !_audioEl) return;
       const elapsed = _audioEl.currentTime;
       const duration = _audioEl.duration || 30;
-      const pct = Math.min(100, (elapsed / Math.min(duration, 30)) * 100);
+      const limit = globalAudio.isPreview ? Math.min(duration, 30) : duration;
+      const pct = Math.min(100, (elapsed / limit) * 100);
       document.getElementById('np-fill').style.width = pct + '%';
       const sec = Math.floor(elapsed);
       document.getElementById('np-cur').textContent = Math.floor(sec/60)+':'+ String(sec%60).padStart(2,'0');

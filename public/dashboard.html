@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fôliza — Mon espace</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="fozila.css"/>
@@ -22,6 +22,16 @@
     .lib-card .cov{font-size:32px;margin-bottom:8px;}
     .lib-card .ttl{font-size:12px;font-weight:600;margin-bottom:4px;}
     .lib-card .prc{font-size:11px;color:var(--muted);margin-bottom:10px;}
+    .mini-player{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-top:6px;}
+    .mini-player audio{width:100%;height:28px;outline:none;}
+    .mini-player audio::-webkit-media-controls-panel{background:#1a1a1a;}
+    .tracks-list{margin-top:8px;display:none;}
+    .track-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+    .track-item:last-child{border-bottom:none;}
+    .track-item:hover .track-title{color:var(--v-light);}
+    .track-num{font-size:10px;color:var(--muted);width:16px;flex-shrink:0;}
+    .track-title{font-size:11px;flex:1;}
+    .track-play{font-size:14px;}
     @media(max-width:640px){.stat-row{grid-template-columns:repeat(2,1fr);}}
   </style>
 </head>
@@ -153,8 +163,9 @@
             </div>
             <div class="ttl">${p.item?.title || 'Article'}</div>
             <div class="prc">${p.item_type==='album'?'Album':'Single'} · ${FOZILA.fmt(p.amount)}</div>
-            <button class="btn-green" style="width:100%;padding:6px;font-size:11px;border-radius:6px;"
-              onclick="FOZILA.download('${p.download_token}')">⬇️ Télécharger</button>
+            <button class="btn-primary" style="width:100%;padding:6px;font-size:11px;border-radius:6px;margin-top:4px;"
+              onclick="openPlayer('${p.download_token}', '${p.item_type}', this)">▶ Écouter</button>
+            <div class="tracks-list" id="tracks-${p.download_token}"></div>
           </div>
         `).join('');
       }
@@ -173,7 +184,7 @@
             </div>
             <div style="text-align:right;">
               <div style="font-size:14px;font-weight:700;color:var(--v-light);">${FOZILA.fmt(p.amount)}</div>
-              <button onclick="FOZILA.download('${p.download_token}')" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:12px;margin-top:4px;">⬇️ Télécharger</button>
+              <span style="font-size:11px;color:var(--green);">✅ Validé</span>
             </div>
           </div>`).join('');
       }
@@ -225,6 +236,55 @@
       } catch(err) {
         FOZILA.toast(err.message || 'Erreur mise à jour', 'error');
       }
+    }
+
+    async function openPlayer(token, type, btn) {
+      const container = document.getElementById('tracks-' + token);
+      if (container.style.display === 'block') {
+        container.style.display = 'none';
+        btn.textContent = '▶ Écouter';
+        return;
+      }
+      btn.textContent = '⏳ Chargement...';
+      try {
+        if (type === 'album') {
+          const tracks = await FOZILA.api('GET', `/download/${token}/tracks`);
+          if (!tracks.length) { FOZILA.toast('Aucun titre disponible', 'info'); btn.textContent = '▶ Écouter'; return; }
+          container.innerHTML = `
+            <div class="mini-player">
+              <audio id="audio-${token}" controls style="width:100%;height:32px;">
+                <source src="/api/download/${token}/track/${tracks[0].id}?dl=0" type="audio/mpeg">
+              </audio>
+            </div>
+            <div style="margin-top:6px;">
+              ${tracks.map(t => `
+                <div class="track-item" onclick="playTrack('${token}', ${t.id})">
+                  <span class="track-num">${String(t.track_num).padStart(2,'0')}</span>
+                  <span class="track-title">${t.title}</span>
+                  <span class="track-play">▶</span>
+                </div>`).join('')}
+            </div>`;
+        } else {
+          container.innerHTML = `
+            <div class="mini-player">
+              <audio id="audio-${token}" controls style="width:100%;height:32px;">
+                <source src="/api/download/${token}?dl=0" type="audio/mpeg">
+              </audio>
+            </div>`;
+        }
+        container.style.display = 'block';
+        btn.textContent = '⏸ Fermer';
+      } catch(e) {
+        FOZILA.toast('Erreur chargement audio', 'error');
+        btn.textContent = '▶ Écouter';
+      }
+    }
+
+    function playTrack(token, trackId) {
+      const audio = document.getElementById('audio-' + token);
+      if (!audio) return;
+      audio.src = `/api/download/${token}/track/${trackId}?dl=0`;
+      audio.play();
     }
 
     loadDashboard().catch(console.error);
