@@ -4,21 +4,29 @@ const db             = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const nodemailer     = require('nodemailer');
 
-// ── CONFIGURATION EMAIL ──
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
-});
-
+// ── NOTIFICATION EMAIL ──
 async function sendOrderNotification(purchase, user, item) {
   const adminEmail = process.env.ADMIN_EMAIL_NOTIF;
-  if (!adminEmail) return;
+  const gmailUser  = process.env.GMAIL_USER;
+  const gmailPass  = process.env.GMAIL_PASS;
+
+  console.log('📧 GMAIL_USER:', gmailUser);
+  console.log('📧 GMAIL_PASS exists:', !!gmailPass);
+  console.log('📧 ADMIN_EMAIL_NOTIF:', adminEmail);
+
+  if (!adminEmail || !gmailUser || !gmailPass) {
+    console.error('❌ Variables email manquantes');
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: gmailUser, pass: gmailPass },
+  });
+
   try {
     await transporter.sendMail({
-      from: `"Fôliza" <${process.env.GMAIL_USER}>`,
+      from: `"Fôliza" <${gmailUser}>`,
       to: adminEmail,
       subject: `🎵 Nouvelle commande en attente — ${user.name}`,
       html: `
@@ -81,14 +89,12 @@ router.post('/', requireAuth, (req, res) => {
   const item  = db.get(`SELECT * FROM ${table} WHERE id = ? AND is_active = 1`, [item_id]);
   if (!item) return res.status(404).json({ error: 'Article introuvable.' });
 
-  // Déjà acheté (complété) ?
   const already = db.get(
     `SELECT id FROM purchases WHERE user_id=? AND item_id=? AND item_type=? AND status='completed'`,
     [req.user.id, item_id, item_type]
   );
   if (already) return res.status(409).json({ error: 'Vous avez déjà acheté cet article.' });
 
-  // Déjà une demande en attente pour ce même article ?
   const pendingExisting = db.get(
     `SELECT id FROM purchases WHERE user_id=? AND item_id=? AND item_type=? AND status='pending'`,
     [req.user.id, item_id, item_type]
@@ -101,10 +107,9 @@ router.post('/', requireAuth, (req, res) => {
     [req.user.id, item_id, item_type, item.price, pay_method||'orange_money', pay_ref.trim()]
   );
 
-  // Envoyer notification email à l'admin
   const userInfo = db.get('SELECT * FROM users WHERE id=?', [req.user.id]);
-  const purchase = { item_id, item_type, pay_method: pay_method||'orange_money', pay_ref: pay_ref.trim() };
-  sendOrderNotification(purchase, userInfo, item).catch(console.error);
+  const purchaseData = { item_id, item_type, pay_method: pay_method||'orange_money', pay_ref: pay_ref.trim() };
+  sendOrderNotification(purchaseData, userInfo, item).catch(console.error);
 
   res.status(201).json({
     message: 'Demande envoyée. Elle sera validée dès que le paiement sera confirmé.',
@@ -142,7 +147,7 @@ router.get('/my/pending', requireAuth, (req, res) => {
   res.json(enriched);
 });
 
-// GET /api/purchases/my/tickets — tous mes tickets (achats validés)
+// GET /api/purchases/my/tickets — tous mes tickets
 router.get('/my/tickets', requireAuth, (req, res) => {
   const tickets = db.all(
     `SELECT ticket_number, item_id, item_type, purchased_at FROM purchases WHERE user_id=? AND status='completed' AND ticket_number != '' ORDER BY purchased_at DESC`,
