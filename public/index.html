@@ -140,7 +140,7 @@
       singlesGrid.innerHTML = singles.map((s, i) => {
         const owned = ownedSingles[i];
         return `
-          <a href="singles.html?id=${s.id}" class="single-card">
+          <a href="singles.html" class="single-card">
             <div class="single-cover" style="background:${s.grad}">
               ${s.cover_path ? `<img src="${s.cover_path}" style="width:100%;height:100%;object-fit:cover;">` : s.emoji}
               ${s.featured ? '<span class="featured-star">⭐</span>' : ''}

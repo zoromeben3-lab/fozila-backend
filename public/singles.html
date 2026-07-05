@@ -145,7 +145,7 @@
     renderSingles().then(() => {
       const urlId = parseInt(new URLSearchParams(location.search).get('id'));
       if (urlId && allSingles.find(s => s.id === urlId)) {
-        setTimeout(() => openBuySingle(urlId), 500);
+        setTimeout(() => openBuySingle(urlId), 800);
       }
     });
   </script>
