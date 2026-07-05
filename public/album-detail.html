@@ -33,28 +33,8 @@
     .track-dur { color:var(--muted);font-size:12px;margin-left:auto; }
 
     /* MINI PLAYER GLOBAL */
-    .mini-player {
-      position:fixed;bottom:0;left:0;right:0;z-index:200;
-      background:rgba(10,10,15,0.97);backdrop-filter:blur(20px);
-      border-top:1px solid var(--border);
-      padding:12px 6%;display:flex;align-items:center;gap:20px;
-      transform:translateY(100%);transition:transform 0.3s;
-    }
-    .mini-player.visible { transform:translateY(0); }
-    .mp-cover { width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0; }
-    .mp-info { flex:0 0 180px; }
-    .mp-title { font-size:13px;font-weight:600;margin-bottom:2px; }
-    .mp-album { font-size:11px;color:var(--muted); }
-    .mp-controls { display:flex;align-items:center;gap:14px; }
-    .mp-btn { background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;transition:color 0.2s; }
     .mp-btn:hover { color:var(--text); }
-    .mp-play { width:38px;height:38px;border-radius:50%;background:var(--v);border:none;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all 0.2s; }
     .mp-play:hover { background:#6D28D9;transform:scale(1.05); }
-    .mp-progress-wrap { flex:1;display:flex;align-items:center;gap:10px; }
-    .mp-time { font-size:11px;color:var(--muted);min-width:32px; }
-    .mp-bar { flex:1;height:4px;background:var(--border);border-radius:100px;cursor:pointer;position:relative; }
-    .mp-fill { height:100%;background:var(--v-light);border-radius:100px;width:0%;transition:width 0.1s; }
-    .mp-close { background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px; }
 
     /* PAY METHODS */
     .pay-methods { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px; }
@@ -74,26 +54,6 @@
     <div class="detail-grid" id="detail-content">
       <div style="text-align:center;color:var(--muted);padding:60px;grid-column:1/-1;">Chargement…</div>
     </div>
-  </div>
-
-  <!-- MINI PLAYER -->
-  <div class="mini-player" id="mini-player">
-    <div class="mp-cover" id="mp-cover">🎵</div>
-    <div class="mp-info">
-      <div class="mp-title" id="mp-title">—</div>
-      <div class="mp-album" id="mp-album">Extrait 30 secondes</div>
-    </div>
-    <div class="mp-controls">
-      <button class="mp-btn" onclick="prevTrack()">⏮</button>
-      <button class="mp-play" id="mp-play-btn" onclick="togglePlay()">⏸</button>
-      <button class="mp-btn" onclick="nextTrack()">⏭</button>
-    </div>
-    <div class="mp-progress-wrap">
-      <span class="mp-time" id="mp-cur">0:00</span>
-      <div class="mp-bar" id="mp-bar" onclick="seekTo(event)"><div class="mp-fill" id="mp-fill"></div></div>
-      <span class="mp-time" id="mp-dur">0:30</span>
-    </div>
-    <button class="mp-close" onclick="stopPlayer()">✕</button>
   </div>
 
   <!-- MODAL PAIEMENT -->
@@ -128,94 +88,7 @@
     let _audio = null;
     let isPlaying = false, currentTrackIdx = 0, tracks = [];
     let animId = null;
-    const PREVIEW_DUR = 30; // secondes d'extrait par titre
 
-    function playTrack(idx) {
-      stopPlayer();
-      if (!tracks[idx]) return;
-      currentTrackIdx = idx;
-
-      if (!album.file_path) {
-        FOZILA.toast('Aucun fichier audio disponible pour cet album', 'info');
-        return;
-      }
-
-      // Utiliser le fichier spécifique du titre si disponible, sinon le fichier principal
-      const trackPath = tracks[idx]?.file_path || album.file_path;
-      if (!trackPath) { FOZILA.toast('Aucun fichier audio disponible', 'info'); return; }
-      const audioUrl = trackPath.startsWith('http') ? trackPath : window.location.origin + trackPath;
-      _audio = new Audio(audioUrl);
-      _audio.volume = 0.85;
-      // Si c'est le fichier principal de l'album, décaler de 30s par titre
-      if (trackPath === album.file_path) {
-        _audio.currentTime = idx * PREVIEW_DUR;
-      }
-      // Afficher la vraie durée
-      _audio.addEventListener('loadedmetadata', () => {
-        const totalSec = Math.floor(_audio.duration);
-        const mm = Math.floor(totalSec / 60);
-        const ss = String(totalSec % 60).padStart(2, '0');
-        document.getElementById('mp-dur').textContent = `${mm}:${ss}`;
-      });
-
-      _audio.play().catch(e => { console.error(e); FOZILA.toast('Lecture impossible : ' + e.message, 'error'); });
-      isPlaying = true;
-
-      // UI mini player
-      const coverEl = document.getElementById('mp-cover');
-      coverEl.style.background = album.cover_path ? 'none' : album.grad;
-      coverEl.innerHTML = album.cover_path
-        ? `<img src="${album.cover_path}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`
-        : album.emoji;
-      document.getElementById('mp-title').textContent   = tracks[idx].name;
-      document.getElementById('mp-album').textContent   = album.title + ' · Extrait 30s';
-      document.getElementById('mp-play-btn').textContent = '⏸';
-      document.getElementById('mini-player').classList.add('visible');
-      document.body.style.paddingBottom = '80px';
-      document.querySelectorAll('.track').forEach((el,i) => el.classList.toggle('playing', i === idx));
-
-      // Barre de progression
-      const startTime = Date.now();
-      cancelAnimationFrame(animId);
-      function tick() {
-        if (!_audio || !isPlaying) return;
-        const elapsed = Math.min((Date.now() - startTime) / 1000, PREVIEW_DUR);
-        document.getElementById('mp-fill').style.width = (elapsed / PREVIEW_DUR * 100) + '%';
-        const s = Math.floor(elapsed);
-        document.getElementById('mp-cur').textContent = Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
-        if (elapsed >= PREVIEW_DUR) { nextTrack(); return; }
-        animId = requestAnimationFrame(tick);
-      }
-      tick();
-
-      clearTimeout(window._previewTimeout);
-      window._previewTimeout = setTimeout(() => nextTrack(), PREVIEW_DUR * 1000);
-      _audio.addEventListener('ended', () => stopPlayer());
-    }
-
-    function togglePlay() {
-      if (!_audio) return;
-      const btn = document.getElementById('mp-play-btn');
-      if (_audio.paused) {
-        _audio.play(); btn.textContent = '⏸'; isPlaying = true;
-      } else {
-        _audio.pause(); btn.textContent = '▶'; isPlaying = false;
-      }
-    }
-
-    function stopPlayer() {
-      if (_audio) { _audio.pause(); _audio = null; }
-      cancelAnimationFrame(animId);
-      clearTimeout(window._previewTimeout);
-      isPlaying = false;
-      document.getElementById('mini-player').classList.remove('visible');
-      document.body.style.paddingBottom = '';
-      document.querySelectorAll('.track').forEach(el => el.classList.remove('playing'));
-      document.getElementById('mp-fill').style.width = '0%';
-    }
-
-    function nextTrack() { stopPlayer(); if (currentTrackIdx < tracks.length - 1) setTimeout(() => playTrack(currentTrackIdx + 1), 300); }
-    function prevTrack() { stopPlayer(); if (currentTrackIdx > 0) setTimeout(() => playTrack(currentTrackIdx - 1), 300); }
 
     function seekTo(e) {
       if (!_audio) return;
@@ -287,8 +160,7 @@
               <button class="btn-primary" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" onclick="openPayModal()">🛒 Acheter cet album</button>
             `}
             <div style="display:flex;gap:8px;margin-top:10px;">
-              <button class="btn-outline" style="flex:1;padding:9px;font-size:12px;border-radius:8px;" onclick="playTrack(0)">▶ Écouter les extraits</button>
-              <button class="btn-outline" style="padding:9px 12px;font-size:12px;border-radius:8px;" title="Partager" onclick="navigator.clipboard?.writeText(location.href);FOZILA.toast('Lien copié !','success')">🔗</button>
+              <button class="btn-outline" style="padding:9px 12px;font-size:12px;border-radius:8px;" title="Partager" onclick="navigator.clipboard?.writeText(location.href);FOZILA.toast('Lien copié !','success')">🔗 Partager</button>
             </div>
           </div>
         </div>
@@ -307,17 +179,12 @@
           </p>
 
           <div class="tracks-list">
-            <h3>🎶 Liste des titres <span style="font-size:13px;color:var(--muted);font-weight:400;">${owned ? '' : '— Cliquez ▶ pour un extrait 30s'}</span></h3>
+            <h3>🎶 Liste des titres</h3>
             ${tracks.map((t,i) => `
-              <div class="track" onclick="playTrack(${i})">
+              <div class="track">
                 <span class="track-num">${i+1}</span>
-                <button class="track-play">▶</button>
                 <span class="track-name">${t.name}</span>
-                ${owned
-                  ? `<button onclick="event.stopPropagation();downloadAlbum()" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:12px;padding:4px 8px;">⬇️</button>`
-                  : `<span class="track-lock">${t.file_path ? '▶' : '🔒'}</span>`
-                }
-                <span class="track-dur" id="track-dur-${i}">${t.dur}</span>
+                <span class="track-dur">${t.dur}</span>
               </div>
             `).join('')}
           </div>
