@@ -1,39 +1,8 @@
-const CACHE_STATIC = 'fozila-static-v13';
+const CACHE_STATIC = 'fozila-static-v14';
 const CACHE_AUDIO  = 'fozila-audio-v3';
 
-const STATIC_FILES = [
-  '/',
-  '/index.html',
-  '/albums.html',
-  '/singles.html',
-  '/auth.html',
-  '/dashboard.html',
-  '/album-detail.html',
-  '/player.html',
-  '/fozila.css',
-  '/fozila.js',
-  '/manifest.json',
-];
-
+// Ne pas pré-cacher lors de l'install — laisser le navigateur gérer la décompression
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_STATIC).then(async cache => {
-      for (const url of STATIC_FILES) {
-        try {
-          // Forcer sans compression pour que le cache soit lisible hors ligne
-          const response = await fetch(url, {
-            cache: 'no-cache',
-            headers: { 'Accept-Encoding': 'identity' }
-          });
-          if (response.ok) {
-            await cache.put(url, response);
-          }
-        } catch(e) {
-          console.log('Erreur cache:', url, e);
-        }
-      }
-    })
-  );
   self.skipWaiting();
 });
 
@@ -114,21 +83,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Fichiers statiques — cache first, réseau en fallback
+  // Fichiers statiques — network first, cache en fallback
+  // Le navigateur décompresse avant de mettre en cache = taille correcte
   event.respondWith((async () => {
-    const cached = await caches.match(event.request);
-    if (cached && cached.headers.get('content-length') !== '0') {
-      return cached;
-    }
     try {
-      const response = await fetch(event.request, { cache: 'no-cache' });
+      const response = await fetch(event.request);
       if (response.ok) {
-        const clone = response.clone();
-        caches.open(CACHE_STATIC).then(cache => cache.put(event.request, clone));
+        const cache = await caches.open(CACHE_STATIC);
+        cache.put(event.request, response.clone());
       }
       return response;
     } catch {
-      return cached || await caches.match('/index.html');
+      const cached = await caches.match(event.request);
+      return cached || await caches.match('/');
     }
   })());
 });
