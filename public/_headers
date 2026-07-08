@@ -1,16 +1,21 @@
 /sw.js
   Content-Type: application/javascript
   Cache-Control: no-cache
+  Content-Encoding: identity
 
 /manifest.json
   Content-Type: application/manifest+json
   Cache-Control: no-cache
+  Content-Encoding: identity
 
 /*.js
   Content-Type: application/javascript
+  Content-Encoding: identity
 
 /*.css
   Content-Type: text/css
+  Content-Encoding: identity
 
 /*.html
   Content-Type: text/html
+  Content-Encoding: identity
