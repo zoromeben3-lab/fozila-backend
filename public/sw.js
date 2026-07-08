@@ -1,4 +1,4 @@
-const CACHE_STATIC = 'fozila-static-v12';
+const CACHE_STATIC = 'fozila-static-v13';
 const CACHE_AUDIO  = 'fozila-audio-v3';
 
 const STATIC_FILES = [
@@ -18,10 +18,13 @@ const STATIC_FILES = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_STATIC).then(async cache => {
-      // Charger chaque fichier individuellement avec no-cache pour avoir la vraie version
       for (const url of STATIC_FILES) {
         try {
-          const response = await fetch(url, { cache: 'no-cache' });
+          // Forcer sans compression pour que le cache soit lisible hors ligne
+          const response = await fetch(url, {
+            cache: 'no-cache',
+            headers: { 'Accept-Encoding': 'identity' }
+          });
           if (response.ok) {
             await cache.put(url, response);
           }
