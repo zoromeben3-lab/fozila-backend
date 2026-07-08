@@ -1,8 +1,11 @@
-const CACHE_STATIC = 'fozila-static-v14';
+const CACHE_STATIC = 'fozila-static-v15';
 const CACHE_AUDIO  = 'fozila-audio-v3';
 
-// Ne pas pré-cacher lors de l'install — laisser le navigateur gérer la décompression
 self.addEventListener('install', event => {
+  // Mettre en cache seulement offline.html qui est simple et sans dépendances
+  event.waitUntil(
+    caches.open(CACHE_STATIC).then(cache => cache.add('/offline.html'))
+  );
   self.skipWaiting();
 });
 
@@ -84,7 +87,6 @@ self.addEventListener('fetch', event => {
   }
 
   // Fichiers statiques — network first, cache en fallback
-  // Le navigateur décompresse avant de mettre en cache = taille correcte
   event.respondWith((async () => {
     try {
       const response = await fetch(event.request);
@@ -95,7 +97,10 @@ self.addEventListener('fetch', event => {
       return response;
     } catch {
       const cached = await caches.match(event.request);
-      return cached || await caches.match('/');
+      if (cached) return cached;
+      // Hors ligne — afficher la page offline dédiée
+      const offlinePage = await caches.match('/offline.html');
+      return offlinePage || new Response('Hors ligne', { status: 503 });
     }
   })());
 });
