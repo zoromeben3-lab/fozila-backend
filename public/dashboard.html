@@ -181,8 +181,12 @@
             <div class="ttl">${p.item?.title || 'Article'}</div>
             <div class="prc">${type==='album'?'Album':'Single'} · ${FOZILA.fmt(p.amount)}</div>
             ${token && itemId ? `
-              <button class="btn-primary" style="width:100%;padding:6px;font-size:11px;border-radius:6px;margin-top:4px;"
-                onclick="location.href='player.html?token=${token}&type=${type}&id=${itemId}'">▶ Écouter</button>
+              <div style="display:flex;gap:6px;margin-top:4px;">
+                <button class="btn-primary" style="flex:1;padding:6px;font-size:11px;border-radius:6px;"
+                  onclick="location.href='player.html?token=${token}&type=${type}&id=${itemId}'">▶ Écouter</button>
+                <button class="btn-green" style="flex:1;padding:6px;font-size:11px;border-radius:6px;"
+                  onclick="realDownload('${token}','${type}','${itemId}','${(p.item?.title||'Article').replace(/'/g,"\\'")}', this)">📥</button>
+              </div>
             ` : `
               <button class="btn-ghost" style="width:100%;padding:6px;font-size:11px;border-radius:6px;margin-top:4px;" disabled>Non disponible</button>
             `}
@@ -340,6 +344,59 @@
       if (!audio) return;
       audio.src = `/api/download/${token}/track/${trackId}?dl=0`;
       audio.play();
+    }
+
+    // Téléchargement RÉEL du fichier vers le stockage du téléphone/PC
+    async function realDownload(token, type, itemId, title, btn) {
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      try {
+        if (type === 'album') {
+          btn.textContent = '⏳';
+          const tracks = await FOZILA.api('GET', `/download/${token}/tracks`);
+          if (!tracks.length) { FOZILA.toast('Aucun titre disponible', 'info'); return; }
+          for (let i = 0; i < tracks.length; i++) {
+            const t = tracks[i];
+            btn.textContent = `⏳ ${i+1}/${tracks.length}`;
+            await downloadFileToDisk(
+              `/api/download/${token}/track/${t.id}?dl=1`,
+              sanitizeFilename(`${title} - ${String(t.track_num).padStart(2,'0')} ${t.title}.mp3`)
+            );
+            // petite pause pour éviter que le navigateur bloque les téléchargements multiples
+            await new Promise(r => setTimeout(r, 500));
+          }
+        } else {
+          btn.textContent = '⏳';
+          await downloadFileToDisk(`/api/download/${token}?dl=1`, sanitizeFilename(`${title}.mp3`));
+        }
+        FOZILA.toast('✅ Téléchargement terminé !', 'success');
+      } catch (e) {
+        FOZILA.toast('Erreur lors du téléchargement', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    }
+
+    async function downloadFileToDisk(url, filename) {
+      const tok = FOZILA.getToken();
+      const res = await fetch(url, {
+        headers: tok ? { Authorization: `Bearer ${tok}` } : {}
+      });
+      if (!res.ok) throw new Error('Téléchargement échoué');
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    }
+
+    function sanitizeFilename(name) {
+      return name.replace(/[\\/:*?"<>|]/g, '').trim();
     }
 
     async function cacheAndRedirect(token, type, itemId) {
