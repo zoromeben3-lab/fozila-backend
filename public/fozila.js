@@ -1,4 +1,4 @@
-﻿// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 //  FOZILA — Client API partagé entre toutes les pages
 //  Toutes les données viennent du backend Node.js
 // ═══════════════════════════════════════════════════════
@@ -306,28 +306,42 @@ FOZILA.trackVisit();
 // ── PWA INSTALLATION ──
 let _deferredPrompt = null;
 
+const _isStandalone = () =>
+  window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const _isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const _isMobile = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+
+function _showInstallBtn(show) {
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = show ? 'flex' : 'none';
+}
+
+// Téléphone : on montre le bouton tout de suite (sauf si l'app est déjà installée)
+window.addEventListener('DOMContentLoaded', () => {
+  if (!_isStandalone() && _isMobile()) _showInstallBtn(true);
+});
+
+// Ordinateur / Android : le navigateur dit "tu peux installer"
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   _deferredPrompt = e;
-  const banner = document.getElementById('install-banner');
-  if (banner) banner.style.display = 'block';
+  if (!_isStandalone()) _showInstallBtn(true);
 });
 
 window.addEventListener('appinstalled', () => {
   _deferredPrompt = null;
-  const banner = document.getElementById('install-banner');
-  if (banner) banner.style.display = 'none';
+  _showInstallBtn(false);
 });
 
 function installApp() {
   if (_deferredPrompt) {
     _deferredPrompt.prompt();
-    _deferredPrompt.userChoice.then(() => {
-      _deferredPrompt = null;
-      const banner = document.getElementById('install-banner');
-      if (banner) banner.style.display = 'none';
-    });
+    _deferredPrompt.userChoice.then(() => { _deferredPrompt = null; _showInstallBtn(false); });
+    return;
+  }
+  if (_isIOS()) {
+    alert('Pour installer Fôliza sur iPhone :\n\n1. Ouvre le site avec Safari\n2. Appuie sur le bouton Partager (le carré avec la flèche)\n3. Appuie sur "Sur l\'écran d\'accueil"\n4. Appuie sur "Ajouter" ✅');
   } else {
-    alert('Pour installer Fôliza :\n\n1. Appuie sur ⋮ en haut à droite\n2. Appuie sur "Ajouter à l\'écran d\'accueil"\n3. Appuie sur "Ajouter" ✅');
+    alert('Pour installer Fôliza :\n\n1. Appuie sur ⋮ en haut à droite de Chrome\n2. Appuie sur "Installer l\'application" ou "Ajouter à l\'écran d\'accueil"\n3. Appuie sur "Installer" ✅');
   }
 }
