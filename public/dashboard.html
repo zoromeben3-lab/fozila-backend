@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <title>Fôliza — Mon espace</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="fozila.css"/>
@@ -34,6 +34,22 @@
     .track-play{font-size:14px;}
     @media(max-width:640px){.stat-row{grid-template-columns:repeat(2,1fr);}}
   </style>
+  <style>
+    html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;}
+    input,select,textarea{font-size:16px;}
+  </style>
+  <script>
+    // iOS Safari ignore user-scalable=no : on bloque le pincement et le double-tap
+    ['gesturestart','gesturechange','gestureend'].forEach(function(e){
+      document.addEventListener(e,function(ev){ev.preventDefault();});
+    });
+    var _lt=0;
+    document.addEventListener('touchend',function(ev){
+      var n=Date.now();
+      if(n-_lt<=300){ev.preventDefault();}
+      _lt=n;
+    },{passive:false});
+  </script>
 </head>
 <body>
   <div id="announce-bar"></div>
